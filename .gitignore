@@ -155,6 +155,7 @@ venv.bak/
 
 # data directory
 /data
+/cvxEDA
 
 # mypy
 .mypy_cache/
