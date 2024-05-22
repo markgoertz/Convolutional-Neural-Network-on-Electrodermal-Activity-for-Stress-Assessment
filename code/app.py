@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from keras.preprocessing.sequence import pad_sequences
 
 app = Flask(__name__)
-model = load_model('D:/Master of Applied IT/code/best_model.keras')
+model = load_model("C:/Users/goert/Documents/GitHub/Convolutional-Neural-Network-on-Electrodermal-Activity-for-Stress-Assessment/code/best_model.keras")
 scaler = StandardScaler()  # Initialize StandardScaler for preprocessing
 
 @app.route('/')
