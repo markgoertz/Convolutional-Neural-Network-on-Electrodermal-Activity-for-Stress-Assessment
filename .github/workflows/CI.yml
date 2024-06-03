@@ -33,6 +33,9 @@ jobs:
   data:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Create data directory
         run: mkdir -p data
 
@@ -49,17 +52,17 @@ jobs:
       - name: Install dependencies
         run: |
           pip install jupyter nbconvert
-          
+
       - name: Print Working Directory
         run: pwd
         
       - name: Convert notebook to script
         run: |
-          jupyter nbconvert --to script ./code/unzip_script.ipynb
+          jupyter nbconvert --to script code/unzip_script.ipynb
 
       - name: Preprocess dataset
         run: |
-          python ./code/unzip_script.py
+          python code/unzip_script.py
 
   run:
     needs: [build, data]
