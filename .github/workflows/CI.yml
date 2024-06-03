@@ -42,8 +42,8 @@ jobs:
 
       - name: Download dataset
         run: |
-          curl -L -o data/dataset.zip https://uni-siegen.sciebo.de/s/HGdUkoNlW1Ub0Gx/download
-          if file data/dataset.zip | grep -q 'Zip archive data'; then
+          curl -L -o data/WESAD.zip https://uni-siegen.sciebo.de/s/HGdUkoNlW1Ub0Gx/download
+          if file data/WESAD.zip | grep -q 'Zip archive data'; then
             echo "Valid ZIP file."
           else
             echo "Invalid ZIP file. Exiting."
