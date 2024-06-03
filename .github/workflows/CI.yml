@@ -62,24 +62,27 @@ jobs:
           pip install nbconvert
           jupyter nbconvert --to script eda_signal_classification.ipynb
           python eda_signal_classification.py
-
+          
   lint:
-    needs: build
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
+      - name: Install Pylint
+        uses: github/codeql-action/init@v1
+    
       - name: Python Linting
-        uses: peter-evans/pylint-actions@v2
-        with:
-          path: .
-
+        run: |
+          pip install pylint
+          pylint .
+    
       - name: Ensure Clean Jupyter Notebooks
         run: |
           pip install nbconvert
           jupyter nbconvert --to script eda_signal_classification.ipynb
           python eda_signal_classification.py
-    
 
   changelog:
+
     runs-on: ubuntu-latest
     steps:
       - name: Get changelog diff
