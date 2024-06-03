@@ -93,7 +93,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pandas scikit-learn matplotlib seaborn keras numpy tensorflow cvxopt
-        
+
+    - name: List files for debugging
+      run: |
+        ls -R
+    
     - name: Run model
       run: python code/eda_signal_classification.py
         
