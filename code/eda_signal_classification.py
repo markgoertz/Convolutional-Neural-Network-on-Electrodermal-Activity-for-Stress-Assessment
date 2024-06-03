@@ -62,7 +62,7 @@ METRIC = "w_eda"
 print(f"MAIN_PATH: {MAIN_PATH}")
 print(f"DATA_PATH: {DATA_PATH}")
 
-dataset = pd.read_csv(DATA_PATH + "/merged_data.csv")
+dataset = pd.read_csv("data/merged_data.csv")
 
 dataset.dtypes
 
