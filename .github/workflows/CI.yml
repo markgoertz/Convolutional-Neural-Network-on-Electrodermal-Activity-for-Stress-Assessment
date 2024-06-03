@@ -66,7 +66,7 @@ jobs:
          python code/eda_signal_classification.py
     - name: Write CML report
       env:
-        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO_TOKEN: ${{ secrets.TOKEN }}
       run: |
         # Post CML report as a comment in GitHub
         cat metrics.txt >> report.md
