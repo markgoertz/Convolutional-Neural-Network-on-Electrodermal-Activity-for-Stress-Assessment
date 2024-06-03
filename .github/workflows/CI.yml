@@ -30,39 +30,6 @@ jobs:
           pip install scikit-learn pandas numpy matplotlib seaborn keras tensorflow cvxopt black[jupyter] jupyter nbconvert
 
 
-
-  # run:
-  #   needs: [build]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-
-  #     - name: Create data directory
-  #       run: mkdir -p data
-
-  #     - name: Download dataset
-  #       run: |
-  #         curl -L -o data/WESAD.zip https://uni-siegen.sciebo.de/s/HGdUkoNlW1Ub0Gx/download
-  #         if file data/WESAD.zip | grep -q 'Zip archive data'; then
-  #           echo "Valid ZIP file."
-  #         else
-  #           echo "Invalid ZIP file. Exiting."
-  #           exit 1
-  #         fi
-
-  #     - name: Install dependencies
-  #       run: |
-  #         pip install -r requirements.txt
-
-  #     - name: Print Working Directory
-  #       run: pwd
-        
-  #     - name: Convert notebook to script
-  #       run: |
-  #         jupyter nbconvert --to script code/eda_signal_classification.ipynb
-  #         python code/eda_signal_classification.py
-
   lint:
     needs: [build]
     runs-on: ubuntu-latest
@@ -101,8 +68,8 @@ jobs:
          python code/eda_signal_classification.py
     - name: Write CML report
       env:
-        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO_TOKEN: ${{ secrets.TOKEN_GITHUB }}
       run: |
          # Post reports as comments in GitHub PRs
-         cat results.txt >> report.md
+         cat metrics.txt >> report.md
          cml comment create report.md
