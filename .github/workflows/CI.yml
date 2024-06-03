@@ -70,19 +70,13 @@ jobs:
       - uses: psf/black@stable
         with:
           src: ./code/eda_signal_classification.ipynb
-          version: py38
           options: "--check --verbose"
+          jupyter: true
 
   changelog:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - name: Get changelog diff
-        run: |
-          pip install nbconvert
-          jupyter nbconvert --to script eda_signal_classification.ipynb
-          python eda_signal_classification.py
-
       - name: Jupyter Notebooks to PDF
         run: |
           pip install nbconvert
