@@ -1,15 +1,29 @@
-# %%
-%pip install scikit-learn -q
-%pip install pandas -q
-%pip install numpy -q
-%pip install matplotlib -q
-%pip install seaborn -q
-%pip install keras -q
-%pip install os -q
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.16.2
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+# ---
 
-%pip install cvxopt -q
+# +
+# %pip install scikit-learn -q
+# %pip install pandas -q
+# %pip install numpy -q
+# %pip install matplotlib -q
+# %pip install seaborn -q
+# %pip install keras -q
+# %pip install os -q
 
-# %%
+# %pip install cvxopt -q
+# -
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import json
@@ -23,7 +37,7 @@ import seaborn as sns
 import os
 import cvxEDA
 
-# %%
+# +
 
 MAIN_PATH = os.path.dirname(os.getcwd())
 DATA_PATH = MAIN_PATH + "/data/"
@@ -32,35 +46,26 @@ QUALITY_THRESHOLD = 64
 BATCH_SIZE = 32
 SHUFFLE_BUFFER_SIZE = 1024
 NUM_FOLDS = 10
+# -
 
-# %%
-"""
-**Choice options of metrics are as follows:**
-- w_eda
-- cvx_phasic
-- cvx_tonic
-"""
+# **Choice options of metrics are as follows:**
+# - w_eda
+# - cvx_phasic
+# - cvx_tonic
 
-# %%
 METRIC = "w_eda"
 
-# %%
-"""
-**MODEL CONFIGURATION**
+# **MODEL CONFIGURATION**
+#
+# - adjust if necessary. This defines the model's performance
 
-- adjust if necessary. This defines the model's performance
-"""
-
-# %%
 dataset = pd.read_csv(DATA_PATH + "/merged_data.csv")
 
-# %%
 dataset.dtypes
 
-# %%
 dataset
 
-# %%
+# +
 import cvxEDA.src.cvxEDA
 
 def calculate_eda_levels(y):
@@ -71,7 +76,8 @@ def calculate_eda_levels(y):
     return r, t, yn
 
 
-# %%
+
+# +
 import matplotlib.pyplot as plt
 
 # Define unique_ids
@@ -107,11 +113,11 @@ for unique_id in unique_ids:
     # plt.legend()
     # plt.show()
 
+# -
 
-# %%
 dataset = pd.concat([dataset, new_dataframe_eda], axis=1)
 
-# %%
+# +
 import pandas as pd
 
 # Function to create sequences DataFrame
@@ -196,15 +202,14 @@ sequences_df = create_sequences_df(dataset)
 # Check the resulting DataFrame
 print(sequences_df.head())
 
+# -
 
-# %%
 sequences_df
 
-# %%
 print(sequences_df.loc[88])
 
 
-# %%
+# +
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -237,7 +242,7 @@ plt.tight_layout()
 plt.show()
 
 
-# %%
+# +
 # import matplotlib.pyplot as plt
 
 # # Create subplots
@@ -267,22 +272,20 @@ plt.show()
 # plt.tight_layout()
 # plt.show()
 
+# -
 
-# %%
 sequences_df
 
-# %%
 print("Before replacing labels")
 unique_labels_before = sequences_df['downsampled_label'].unique()
 print(unique_labels_before, "\n")
 print("Number of unique labels before replacement:", len(unique_labels_before), "\n")
 
 
-# %%
 sequences_df['downsampled_label'] = sequences_df['downsampled_label'].apply(lambda x : 1 if x == 2.0 else 0)
 
 
-# %%
+# +
 from sklearn import preprocessing
 
 print("After replacing labels")
@@ -294,13 +297,13 @@ le = preprocessing.LabelEncoder()  # Generates a look-up table
 le.fit(sequences_df['downsampled_label'])
 sequences_df['downsampled_label'] = le.transform(sequences_df['downsampled_label'])
 
+# -
 
-# %%
 num_classes = len(sequences_df['downsampled_label'].unique())
 print(num_classes)
 
 
-# %%
+# +
 from collections import Counter
 
 def plot_label_distribution(df):
@@ -327,11 +330,13 @@ def plot_label_distribution(df):
     plt.ylabel("Count")
     plt.show()
 
-# %%
+
+# -
+
 plot_label_distribution(sequences_df)
 
 
-# %%
+# +
 # import pandas as pd
 # from sklearn.utils import resample
 
@@ -351,20 +356,18 @@ plot_label_distribution(sequences_df)
 # # Shuffle the combined dataset to mix the samples
 # sequences_df_balanced = sequences_df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
 
-# %%
+# +
 # sequences_df_balanced
 
-# %%
+# +
 # plot_label_distribution(sequences_df_balanced)
+# -
 
-# %%
-"""
-****Scale and split data****
+# ****Scale and split data****
+#
+# We perform a simple Min-Max scaling to bring the value-range between 0 and 1.
 
-We perform a simple Min-Max scaling to bring the value-range between 0 and 1.
-"""
-
-# %%
+# +
 # Scale the 'w_eda' feature
 scaler = preprocessing.MinMaxScaler()
 eda_series_list = [scaler.fit_transform(np.asarray(i).reshape(-1, 1)) for i in sequences_df[METRIC]]
@@ -383,7 +386,7 @@ print(f"EDA list Count:", len(eda_series_list),"\n" "Labels list Count:", len(la
 
 
 
-# %%
+# +
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn import model_selection
 from collections import Counter
@@ -445,7 +448,7 @@ x_train_resampled, y_train_resampled = apply_smote(x_train, y_train)
 class_distribution_after = Counter(y_train_resampled)
 print("Class distribution after SMOTE:", {0: class_distribution_after[0], 1: class_distribution_after[1]})
 
-# %%
+# +
 import matplotlib.pyplot as plt
 from collections import Counter
 
@@ -480,7 +483,7 @@ plt.tight_layout()
 plt.show()
 
 
-# %%
+# +
 def plot_dataset_distribution(x_train, y_train, x_test, y_test, x_val, y_val):
     """
     Plots a bar chart showing the sizes of the train, validation, and test sets.
@@ -510,7 +513,7 @@ def plot_dataset_distribution(x_train, y_train, x_test, y_test, x_val, y_val):
 # Plot dataset distribution
 plot_dataset_distribution(x_train, y_train, x_test, y_test, x_val, y_val)
 
-# %%
+# +
 from sklearn.model_selection import KFold
 
 kfold = KFold(n_splits=NUM_FOLDS, shuffle=True, random_state=42)
@@ -536,7 +539,8 @@ def SplitDatasetForFolds(train_index, val_index, fold_nr):
 
     return train_dataset, test_dataset, val_dataset
 
-# %%
+
+# +
 vals_dict = {}
 for i in sequences_df['downsampled_label']:
     if i in vals_dict.keys():
@@ -553,13 +557,13 @@ weight_dict = {k: (1 - (v / total)) for k, v in vals_dict.items()}
 print(weight_dict)
 
 
+# -
 
-# %%
 # Assuming your one-hot encoded labels are in a variable named 'labels'
 binary_labels = np.argmax(sequences_df['downsampled_label'])
 print("Shape of binary labels:", binary_labels.shape)
 
-# %%
+
 def plot_history_metrics(history_dict: dict):
     total_plots = len(history_dict)
     cols = total_plots // 2
@@ -575,7 +579,8 @@ def plot_history_metrics(history_dict: dict):
         plt.title(str(key))
     plt.show()
 
-# %%
+
+# +
 
 def create_model():
     input_layer = keras.Input(shape=(32, 1))
@@ -605,7 +610,8 @@ def create_model():
     
     return model
 
-# %%
+
+# +
 conv_model = create_model()
 conv_model.summary()
 
@@ -615,7 +621,7 @@ with open("model.json", "w") as json_file:
     json_file.write(model_json)
 
 
-# %%
+# +
 # To store history of each fold
 history_list = []
 fold_number = 1
@@ -678,7 +684,7 @@ print("Cross-validation training completed")
 
 
 
-# %%
+# +
 # Load the best model
 best_model = keras.models.load_model(best_model_filename)
 
@@ -691,7 +697,7 @@ for dataset in [train_dataset, val_dataset]:
     with open(f"{dataset}_score.json", "w") as f:
         f.write(f"Loss: {loss}\n Binary Accuracy: {binary_accuracy}\n AUC: {auc}\n Precision: {precision}\n Recall: {recall}\n") 
 
-# %%
+# +
 import matplotlib.pyplot as plt
 
 # Define a color scheme for metrics
@@ -735,24 +741,24 @@ val_metrics = ['val_binary_accuracy', 'val_loss', 'val_auc', 'val_precision', 'v
 plot_metrics(history_list, metrics, val_metrics, colors)
 
 
-# %%
+# +
 from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score
 
 # Assuming best_model is already defined and trained
 # Generate predictions on the validation set
-y_pred_probs = best_model.predict(x_val, verbose=0)
+y_pred_probs = best_model.predict(x_test, verbose=0)
 y_pred = (y_pred_probs > 0.5).astype(int).flatten()
 
 # Compute the confusion matrix
-conf_matrix = confusion_matrix(y_val, y_pred)
+conf_matrix = confusion_matrix(y_test, y_pred)
 print("Confusion Matrix:")
 print(conf_matrix)
 
 # Compute metrics
-precision = precision_score(y_val, y_pred)
-recall = recall_score(y_val, y_pred)
-accuracy = accuracy_score(y_val, y_pred)
-auc = roc_auc_score(y_val, y_pred_probs)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+accuracy = accuracy_score(y_test, y_pred)
+auc = roc_auc_score(y_test, y_pred_probs)
 
 print(f"Precision: {precision}")
 print(f"Recall: {recall}")
@@ -768,8 +774,7 @@ plt.title('Confusion Matrix')
 plt.show()
 plt.savefig('confusion_matrix.png')
 
-
-# %%
+# +
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -814,7 +819,7 @@ def view_evaluated_eeg_plots(model, sequences_df, scaler):
 view_evaluated_eeg_plots(best_model, sequences_df, scaler)
 
 
-# %%
+# +
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -866,3 +871,4 @@ def view_evaluated_eeg_plots(model, sequences_df, scaler, target_id):
 
 # Call the function with the required arguments
 view_evaluated_eeg_plots(best_model, sequences_df_balanced, scaler, target_id='S2')
+
