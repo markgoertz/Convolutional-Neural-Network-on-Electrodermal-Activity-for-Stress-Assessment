@@ -745,7 +745,7 @@ plot_metrics(history_list, metrics, val_metrics, colors)
 
 
 # +
-from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score
+from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score, confusion_matrix
 
 # Assuming best_model is already defined and trained
 # Generate predictions on the validation set
@@ -825,6 +825,7 @@ view_evaluated_eeg_plots(best_model, sequences_df, scaler)
 # +
 import numpy as np
 import matplotlib.pyplot as plt
+
 
 def view_evaluated_eeg_plots(model, sequences_df, scaler, target_id):
     def plot_signals(data, labels, predictions, ids, times):
