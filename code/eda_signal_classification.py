@@ -872,6 +872,4 @@ def view_evaluated_eeg_plots(model, sequences_df, scaler, target_id):
     plt.title('Confusion Matrix')
     plt.show()
 
-# Call the function with the required arguments
-view_evaluated_eeg_plots(best_model, sequences_df_balanced, scaler, target_id='S2')
 
