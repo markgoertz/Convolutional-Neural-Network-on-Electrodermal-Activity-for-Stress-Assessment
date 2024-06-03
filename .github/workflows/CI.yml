@@ -45,7 +45,11 @@ jobs:
             echo "Invalid ZIP file. Exiting."
             exit 1
           fi
-      
+
+      - name: Install dependencies
+        run: |
+          pip install jupyter nbconvert
+
       - name: Convert notebook to script
         run: |
           jupyter nbconvert --to script code/unzip_script.ipynb
