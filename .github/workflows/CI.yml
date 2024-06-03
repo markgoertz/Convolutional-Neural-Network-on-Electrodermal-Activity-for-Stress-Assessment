@@ -101,10 +101,10 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: confusion-matrix
-        path: confusion_matrix.png
+        path: code/confusion_matrix.png
         
     - name: Upload accuracy score
       uses: actions/upload-artifact@v2
       with:
         name: accuracy-score
-        path: accuracy_score.txt
+        path: code/accuracy_score.txt
