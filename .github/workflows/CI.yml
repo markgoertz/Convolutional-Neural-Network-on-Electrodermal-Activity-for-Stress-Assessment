@@ -72,4 +72,5 @@ jobs:
         id: action_black
         with: 
           options: "--verbose"
-          src: "./code/eda_signal_classification.ipynb"
+          src: "./code"
+          jupyter: true
