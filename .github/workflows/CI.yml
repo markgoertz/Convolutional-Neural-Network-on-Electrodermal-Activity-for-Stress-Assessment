@@ -64,11 +64,12 @@ jobs:
           python eda_signal_classification.py
 
   lint:
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: psf/black@stable
-        with:
-          src: ./code/eda_signal_classification.ipynb
-          jupyter: true
-
+        id: action_black
+        with: 
+          options: "--verbose"
+          src: "./code/eda_signal_classification.ipynb"
