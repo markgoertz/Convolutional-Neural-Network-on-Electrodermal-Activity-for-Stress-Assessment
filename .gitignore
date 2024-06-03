@@ -154,7 +154,12 @@ venv.bak/
 /site
 
 # data directory
-/data
+/data/processed
+/data/unprocessed
+/data/unzip
+/data/WESAD.ZIP
+
+
 /cvxEDA
 
 # mypy
