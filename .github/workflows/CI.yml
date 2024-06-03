@@ -79,10 +79,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install nbstripout flake8
-  
-      - name: Remove Output Cells
-        run: nbstripout --keep-input --keep-count --keep-output "**/*.ipynb"
-  
+    
       - name: Lint Python Code
         run: |
           find . -name '*.ipynb' -type f -exec bash -c 'flake8 --ignore=E,W,N {}' \;
