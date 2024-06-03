@@ -45,13 +45,15 @@ jobs:
             echo "Invalid ZIP file. Exiting."
             exit 1
           fi
-
-      - name: Extract files
-        id: extract
+      
+      - name: Install Jupyter
         run: |
-          # Run the extraction process here and output the merged_data.csv
-          unzip_script.ipynb
-          echo "::set-output name=merged_data::merged_data.csv"
+          pip install jupyter
+
+      - name: Preprocess dataset
+        run: |
+          jupyter nbconvert --to script unzip_script.ipynb
+          python unzip_script.py  # Assuming preprocess.py is generated from the notebook
 
   run:
     needs: [build, data]
