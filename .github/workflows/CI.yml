@@ -66,16 +66,9 @@ jobs:
          python code/eda_signal_classification.py
     - name: Write CML report
       env:
-        REPO_TOKEN: ${{ secrets.TOKEN }}
+        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-          echo "## Model Metrics" > report.md
-          cat metrics.txt >> report.md
-          
-          echo "\n## Model Performance" >> report.md
-          echo "GitHub Token: $REPO_TOKEN"
-
-          echo "Model performance metrics are on the plot below." >> report.md
-          
-          cml-publish code/confusion_matrix.png --md >> report.md
-          
-          cml-send-comment report.md
+        # Post CML report as a comment in GitHub
+        cat metrics.txt >> report.md
+        echo '![](code/confusion_matrix.png "Confusion Matrix")' >> report.md
+        cml comment create report.md
