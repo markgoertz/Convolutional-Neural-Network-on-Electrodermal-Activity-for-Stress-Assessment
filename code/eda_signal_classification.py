@@ -40,7 +40,7 @@ import cvxEDA
 # +
 
 MAIN_PATH = os.path.dirname(os.getcwd())
-DATA_PATH = MAIN_PATH + "/data/"
+DATA_PATH = MAIN_PATH + "/data"
 
 QUALITY_THRESHOLD = 64
 BATCH_SIZE = 32
