@@ -78,37 +78,28 @@ jobs:
 
 
   run:
-    needs: [build]
     runs-on: ubuntu-latest
+    # optionally use a convenient Ubuntu LTS + DVC + CML image
+    # container: ghcr.io/iterative/cml:0-dvc2-base1
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-      
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-        
-    - name: Install dependencies
+    - uses: actions/checkout@v3
+     # may need to setup NodeJS & Python3 on e.g. self-hosted
+     # - uses: actions/setup-node@v3
+     #   with:
+     #     node-version: '16'
+     # - uses: actions/setup-python@v4
+     #   with:
+     #     python-version: '3.x'
+    - uses: iterative/setup-cml@v1
+    - name: Train model
       run: |
-        python -m pip install --upgrade pip
-        pip install pandas scikit-learn matplotlib seaborn keras numpy tensorflow cvxopt
-
-    - name: List files for debugging
+         # Your ML workflow goes here
+         pip install -r requirements.txt
+         python code/eda_signal_classification.py
+    - name: Write CML report
+      env:
+        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        ls -R
-    
-    - name: Run model
-      run: python code/eda_signal_classification.py
-        
-    - name: Upload confusion matrix
-      uses: actions/upload-artifact@v2
-      with:
-        name: confusion-matrix
-        path: confusion_matrix.png
-        
-    - name: Upload accuracy score
-      uses: actions/upload-artifact@v2
-      with:
-        name: accuracy-score
-        path: accuracy_score.txt
+         # Post reports as comments in GitHub PRs
+         cat results.txt >> report.md
+         cml comment create report.md
