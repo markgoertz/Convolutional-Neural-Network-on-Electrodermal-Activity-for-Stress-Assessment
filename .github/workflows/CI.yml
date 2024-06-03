@@ -60,7 +60,7 @@ jobs:
       - name: Convert notebook to script
         run: |
           jupyter nbconvert --to script code/unzip_script.ipynb
-          python unzip_script.py
+          python code/unzip_script.py
 
 
   run:
