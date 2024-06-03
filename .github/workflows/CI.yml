@@ -52,9 +52,14 @@ jobs:
 
       - name: Preprocess dataset
         run: |
-          cd code  # Navigate to the directory containing the notebook
-          jupyter nbconvert --to script unzip_script.ipynb
-          python unzip_script.py
+          if [ -d "code" ]; then  # Check if the directory exists
+            cd code  # Navigate to the directory containing the notebook
+            jupyter nbconvert --to script unzip_script.ipynb
+            python unzip_script.py
+          else
+            echo "Directory 'code' not found."
+            exit 1
+          fi
 
   run:
     needs: [build, data]
