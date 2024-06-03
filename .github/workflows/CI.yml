@@ -49,7 +49,11 @@ jobs:
             echo "Invalid ZIP file. Exiting."
             exit 1
           fi
-          
+
+      - name: Install dependencies
+        run: |
+          pip install scikit-learn pandas numpy matplotlib seaborn keras tensorflow cvxopt black[jupyter] jupyter nbconvert
+
       - name: Print Working Directory
         run: pwd
         
