@@ -697,8 +697,8 @@ for dataset in [train_dataset, val_dataset]:
     loss, binary_accuracy, auc, precision, recall = best_model.evaluate(dataset)
     print(f"Loss: {loss}\n Binary Accuracy: {binary_accuracy}\n AUC: {auc}\n Precision: {precision}\n Recall: {recall}\n")
 
-    with open(f"{dataset}_score.json", "w") as f:
-        f.write(f"Loss: {loss}\n Binary Accuracy: {binary_accuracy}\n AUC: {auc}\n Precision: {precision}\n Recall: {recall}\n") 
+with open(f"metrics.txt", "w") as f:
+    f.write(f"Loss: {loss}\n Binary Accuracy: {binary_accuracy}\n AUC: {auc}\n Precision: {precision}\n Recall: {recall}\n") 
 
 # +
 import matplotlib.pyplot as plt
