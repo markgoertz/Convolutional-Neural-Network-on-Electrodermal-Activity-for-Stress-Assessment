@@ -42,8 +42,6 @@ jobs:
           src: "./code"
           jupyter: true
 
-
-
   run:
     runs-on: ubuntu-latest
     # optionally use a convenient Ubuntu LTS + DVC + CML image
@@ -72,4 +70,5 @@ jobs:
       run: |
          # Post reports as comments in GitHub PRs
          cat metrics.txt >> report.md
+         echo "![](./confusion_matrix.png)" >> report.md
          cml comment create report.md
