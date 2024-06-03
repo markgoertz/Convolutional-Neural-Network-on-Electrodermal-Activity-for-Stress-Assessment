@@ -72,8 +72,10 @@ jobs:
           cat metrics.txt >> report.md
           
           echo "\n## Model Performance" >> report.md
+          echo "GitHub Token: $REPO_TOKEN"
+
           echo "Model performance metrics are on the plot below." >> report.md
           
-          cml-publish confusion_matrix.png --md >> report.md
+          cml-publish code/confusion_matrix.png --md >> report.md
           
           cml-send-comment report.md
