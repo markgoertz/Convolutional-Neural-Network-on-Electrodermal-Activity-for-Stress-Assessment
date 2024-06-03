@@ -1,0 +1,4 @@
+artifacts:
+  1D-CNN-EDA_SIGNAL:
+    path: models.json
+    type: model
