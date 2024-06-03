@@ -50,6 +50,11 @@ jobs:
         run: |
           pip install jupyter
 
+      - name: Check Directory Structure
+        run: |
+          ls -l
+          ls -l code
+          
       - name: Preprocess dataset
         run: |
           if [ -d "code" ]; then  # Check if the directory exists
