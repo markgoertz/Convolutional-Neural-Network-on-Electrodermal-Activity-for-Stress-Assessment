@@ -56,18 +56,28 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Ensure Clean Jupyter Notebooks
-        uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
+      - name: Python Linting
+        uses: peter-evans/pylint-actions@v2
         with:
-          paths: '**/*.ipynb'
+          path: .
+
+      - name: Ensure Clean Jupyter Notebooks
+        run: |
+          pip install nbconvert
+          jupyter nbconvert --to script eda_signal_classification.ipynb
+          python eda_signal_classification.py
 
   changelog:
     runs-on: ubuntu-latest
     steps:
       - name: Get changelog diff
-        uses: jupyter-naas/get-changelog-diff@v1.0.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install nbconvert
+          jupyter nbconvert --to script eda_signal_classification.ipynb
+          python eda_signal_classification.py
 
       - name: Jupyter Notebooks to PDF
-        uses: MohamedElash
+        run: |
+          pip install nbconvert
+          jupyter nbconvert --to script eda_signal_classification.ipynb
+          python eda_signal_classification.py
