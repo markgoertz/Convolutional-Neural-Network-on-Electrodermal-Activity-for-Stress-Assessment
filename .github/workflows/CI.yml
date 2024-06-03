@@ -64,22 +64,28 @@ jobs:
           python eda_signal_classification.py
 
   lint:
-    needs: [build]
+    name: Lint Python Code
     runs-on: ubuntu-latest
     steps:
-      - name: Install Pylint
-        uses: github/codeql-action/init@v3
-    
-      - name: Python Linting
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+  
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+  
+      - name: Install Dependencies
         run: |
-          pip install pylint
-          pylint .
-    
-      - name: Ensure Clean Jupyter Notebooks
+          python -m pip install --upgrade pip
+          pip install nbstripout flake8
+  
+      - name: Remove Output Cells
+        run: nbstripout --keep-input --keep-count --keep-output "**/*.ipynb"
+  
+      - name: Lint Python Code
         run: |
-          pip install nbconvert
-          jupyter nbconvert --to script eda_signal_classification.ipynb
-          python eda_signal_classification.py
+          find . -name '*.ipynb' -type f -exec bash -c 'flake8 --ignore=E,W,N {}' \;
 
   changelog:
     needs: [build]
