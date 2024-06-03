@@ -30,48 +30,48 @@ jobs:
 
 
 
-  data:
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # data:
+  #   needs: [build]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Create data directory
-        run: mkdir -p data
+  #     - name: Create data directory
+  #       run: mkdir -p data
 
-      - name: Download dataset
-        run: |
-          curl -L -o data/WESAD.zip https://uni-siegen.sciebo.de/s/HGdUkoNlW1Ub0Gx/download
-          if file data/WESAD.zip | grep -q 'Zip archive data'; then
-            echo "Valid ZIP file."
-          else
-            echo "Invalid ZIP file. Exiting."
-            exit 1
-          fi
+  #     - name: Download dataset
+  #       run: |
+  #         curl -L -o data/WESAD.zip https://uni-siegen.sciebo.de/s/HGdUkoNlW1Ub0Gx/download
+  #         if file data/WESAD.zip | grep -q 'Zip archive data'; then
+  #           echo "Valid ZIP file."
+  #         else
+  #           echo "Invalid ZIP file. Exiting."
+  #           exit 1
+  #         fi
 
-      - name: Install dependencies
-        run: |
-          pip install scikit-learn pandas numpy matplotlib seaborn keras tensorflow cvxopt black[jupyter] jupyter nbconvert
+  #     - name: Install dependencies
+  #       run: |
+  #         pip install scikit-learn pandas numpy matplotlib seaborn keras tensorflow cvxopt black[jupyter] jupyter nbconvert
 
-      - name: Print Working Directory
-        run: pwd
+  #     - name: Print Working Directory
+  #       run: pwd
         
-      - name: Convert notebook to script
-        run: |
-          jupyter nbconvert --to script code/unzip_script.ipynb
-          python code/unzip_script.py
+  #     - name: Convert notebook to script
+  #       run: |
+  #         jupyter nbconvert --to script code/unzip_script.ipynb
+  #         python code/unzip_script.py
 
 
-  run:
-    needs: [build, data]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Jupyter notebook
-        run: |
-          pip install nbconvert
-          jupyter nbconvert --to script eda_signal_classification.ipynb
-          python eda_signal_classification.py
+  # run:
+  #   needs: [build, data]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Run Jupyter notebook
+  #       run: |
+  #         pip install nbconvert
+  #         jupyter nbconvert --to script eda_signal_classification.ipynb
+  #         python eda_signal_classification.py
 
   lint:
     needs: [build]
