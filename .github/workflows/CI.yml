@@ -52,8 +52,9 @@ jobs:
 
       - name: Preprocess dataset
         run: |
+          cd code  # Navigate to the directory containing the notebook
           jupyter nbconvert --to script unzip_script.ipynb
-          python unzip_script.py  # Assuming preprocess.py is generated from the notebook
+          python unzip_script.py
 
   run:
     needs: [build, data]
