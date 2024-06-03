@@ -50,7 +50,7 @@ jobs:
         id: extract
         run: |
           # Run the extraction process here and output the merged_data.csv
-          1. unzip_script.ipynb
+          unzip_script.ipynb
           echo "::set-output name=merged_data::merged_data.csv"
 
   run:
@@ -64,25 +64,14 @@ jobs:
           python eda_signal_classification.py
 
   lint:
-    name: Lint Python Code
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-  
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: psf/black@stable
         with:
-          python-version: '3.x'
-  
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install nbstripout flake8
-    
-      - name: Lint Python Code
-        run: |
-          find . -name '*.ipynb' -type f -exec bash -c 'flake8 --ignore=E,W,N {}' \;
+          path: .
+          exclude: 'data/*'
+          target-version: py38
 
   changelog:
     needs: [build]
