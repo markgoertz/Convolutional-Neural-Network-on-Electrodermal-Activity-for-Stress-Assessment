@@ -69,9 +69,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: psf/black@stable
         with:
-          path: .
-          exclude: 'data/*'
-          target-version: py38
+          src: ./code/eda_signal_classification.ipynb
+          version: py38
+          options: "--check --verbose"
 
   changelog:
     needs: [build]
