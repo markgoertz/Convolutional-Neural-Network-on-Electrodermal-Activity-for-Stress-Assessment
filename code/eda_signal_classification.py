@@ -59,10 +59,7 @@ METRIC = "w_eda"
 #
 # - adjust if necessary. This defines the model's performance
 
-print(f"MAIN_PATH: {MAIN_PATH}")
-print(f"DATA_PATH: {DATA_PATH}")
-
-dataset = pd.read_csv("data/merged_data.csv")
+dataset = pd.read_csv(DATA_PATH + "/merged_data.csv")
 
 dataset.dtypes
 
@@ -664,7 +661,7 @@ for train_index, val_index in kfold.split(x_train):
     # Train the model
     history = model.fit(
         train_dataset,
-        epochs=1,
+        epochs=25,
         validation_data=val_dataset,
         callbacks=callbacks,
         class_weight=weight_dict
@@ -683,9 +680,6 @@ for train_index, val_index in kfold.split(x_train):
     print("------------------------------------------------------------------------------------------------------------------\n")
 
 print("Cross-validation training completed")
-
-
-
 
 # +
 # Load the best model
@@ -734,6 +728,7 @@ def plot_metrics(history_list, metrics, val_metrics, colors):
         axs[i, 1].set_ylim([0, y_max])  # Set y-axis limit for validation plot
         
     plt.tight_layout()
+    plt.savefig('folds.png')
     plt.show()
 
 # Updated metrics list based on the actual keys from the history dictionary
@@ -747,21 +742,20 @@ plot_metrics(history_list, metrics, val_metrics, colors)
 # +
 from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score, confusion_matrix
 
-# Assuming best_model is already defined and trained
-# Generate predictions on the validation set
-y_pred_probs = best_model.predict(x_test, verbose=0)
+# Generate predictions on the test set
+y_pred_probs = best_model.predict(x_train, verbose=0)
 y_pred = (y_pred_probs > 0.5).astype(int).flatten()
 
 # Compute the confusion matrix
-conf_matrix = confusion_matrix(y_test, y_pred)
+conf_matrix = confusion_matrix(y_train, y_pred)
 print("Confusion Matrix:")
 print(conf_matrix)
 
 # Compute metrics
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-accuracy = accuracy_score(y_test, y_pred)
-auc = roc_auc_score(y_test, y_pred_probs)
+precision = precision_score(y_val, y_pred)
+recall = recall_score(y_val, y_pred)
+accuracy = accuracy_score(y_val, y_pred)
+auc = roc_auc_score(y_val, y_pred_probs)
 
 print(f"Precision: {precision}")
 print(f"Recall: {recall}")
@@ -776,7 +770,6 @@ plt.ylabel('True Label')
 plt.title('Confusion Matrix')
 plt.savefig('model_results.png', dpi = 120)
 plt.show()
-
 
 # +
 import numpy as np
@@ -827,7 +820,6 @@ view_evaluated_eeg_plots(best_model, sequences_df, scaler)
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 def view_evaluated_eeg_plots(model, sequences_df, scaler, target_id):
     def plot_signals(data, labels, predictions, ids, times):
         total_plots = len(data)
@@ -874,4 +866,6 @@ def view_evaluated_eeg_plots(model, sequences_df, scaler, target_id):
     plt.title('Confusion Matrix')
     plt.show()
 
+# Call the function with the required arguments
+view_evaluated_eeg_plots(best_model, sequences_df_balanced, scaler, target_id='S2')
 

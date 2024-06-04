@@ -67,8 +67,13 @@ jobs:
         echo "## Model Metrics" > report.md
         cat code/metrics.txt >> report.md
 
+        echo "## Model data input" >> report.md
+        echo '![](dataset_distribution.png)' >> report.md
+
         echo "## Model Performance" >> report.md
         echo "Model performance metrics are on the plot below." >> report.md
         echo '![](model_results.png)' >> report.md
+        echo '![](folds.png)' >> report.md
+        
 
         cml comment create --publish report.md        
