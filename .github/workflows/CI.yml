@@ -42,6 +42,7 @@ jobs:
 
   run:
     runs-on: ubuntu-latest
+    container: docker://dvcorg/cml-py3:latest
     steps:
     - uses: actions/checkout@v3
      # may need to setup NodeJS & Python3 on e.g. self-hosted
@@ -53,8 +54,7 @@ jobs:
      #     python-version: '3.x'
     - name: List contents of data directory
       run: ls -l data
-    
-    - uses: iterative/setup-cml@v2
+
     - name: Write CML report
       env:
         REPO_TOKEN: ${{ secrets.TOKEN }}
@@ -66,7 +66,6 @@ jobs:
         # Post CML report as a comment in GitHub
         echo "## Model Metrics" > report.md
         cat code/metrics.txt >> report.md
-
         echo "\n## Model Performance" >> report.md
         echo "Model performance metrics are on the plot below." >> report.md
         cml-publish code/model_results.png --md >> report.md
