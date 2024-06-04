@@ -61,10 +61,6 @@ METRIC = "w_eda"
 
 dataset = pd.read_csv(DATA_PATH + "/merged_data.csv")
 
-dataset.dtypes
-
-dataset
-
 # +
 import cvxEDA.src.cvxEDA
 
@@ -199,15 +195,6 @@ def create_sequences_df(merged_df, max_length=32):
 # Create sequences DataFrame
 sequences_df = create_sequences_df(dataset)
 
-# Check the resulting DataFrame
-print(sequences_df.head())
-
-# -
-
-sequences_df
-
-print(sequences_df.loc[88])
-
 
 # +
 import matplotlib.pyplot as plt
@@ -240,37 +227,6 @@ for i, unique_id in enumerate(unique_ids):
 # Adjust layout
 plt.tight_layout()
 plt.show()
-
-
-# +
-# import matplotlib.pyplot as plt
-
-# # Create subplots
-# fig, axes = plt.subplots(16, 3, figsize=(60, 40))  # Increased figure size
-
-# # Define colors for each acceleration component
-# colors = ['red', 'green', 'blue']
-
-# # Iterate through each unique id
-# for i, unique_id in enumerate(unique_ids):
-#     # Filter data for each id
-#     subset_data = dataset[dataset['ID'] == unique_id]
-    
-#     # Iterate through X, Y, and Z accelerations
-#     for j, accel_component in enumerate(['X', 'Y', 'Z']):
-#         ax = axes[i, j]  # Select the appropriate subplot
-        
-#         # Plot acceleration component with different color
-#         ax.plot(subset_data['Time'], subset_data[accel_component], label=f'{accel_component} Acceleration', color=colors[j])
-#         ax.set_title(f"Data for {unique_id} - {accel_component} Acceleration")
-#         ax.set_xlabel('Time')
-#         ax.set_ylabel('Acceleration')
-#         ax.legend()
-#         ax.tick_params(axis='x', rotation=45)
-
-# # Adjust layout
-# plt.tight_layout()
-# plt.show()
 
 # -
 
@@ -337,31 +293,27 @@ plot_label_distribution(sequences_df)
 
 
 # +
-# import pandas as pd
-# from sklearn.utils import resample
+import pandas as pd
+from sklearn.utils import resample
 
-# # Separate the majority ('no-stress') and minority ('stress') classes
-# df_no_stress = sequences_df[sequences_df['downsampled_label'] == 0]
-# df_stress = sequences_df[sequences_df['downsampled_label'] == 1]
+# Separate the majority ('no-stress') and minority ('stress') classes
+df_no_stress = sequences_df[sequences_df['downsampled_label'] == 0]
+df_stress = sequences_df[sequences_df['downsampled_label'] == 1]
 
-# # Downsample the majority class ('no-stress') to match the minority class ('stress')
-# df_no_stress_downsampled = resample(df_no_stress,
-#                                     replace=False,  # Sample without replacement
-#                                     n_samples=len(df_stress),  # Match the number of 'stress' samples
-#                                     random_state=42)  # Ensure reproducibility
+# Downsample the majority class ('no-stress') to match the minority class ('stress')
+df_no_stress_downsampled = resample(df_no_stress,
+                                    replace=False,  # Sample without replacement
+                                    n_samples=len(df_stress),  # Match the number of 'stress' samples
+                                    random_state=42)  # Ensure reproducibility
 
-# # Combine the downsampled 'no-stress' class with the 'stress' class
-# sequences_df_balanced = pd.concat([df_no_stress_downsampled, df_stress])
+# Combine the downsampled 'no-stress' class with the 'stress' class
+sequences_df_balanced = pd.concat([df_no_stress_downsampled, df_stress])
 
-# # Shuffle the combined dataset to mix the samples
-# sequences_df_balanced = sequences_df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
-
-# +
-# sequences_df_balanced
-
-# +
-# plot_label_distribution(sequences_df_balanced)
+# Shuffle the combined dataset to mix the samples
+sequences_df_balanced = sequences_df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
 # -
+
+plot_label_distribution(sequences_df_balanced)
 
 # ****Scale and split data****
 #
@@ -370,117 +322,56 @@ plot_label_distribution(sequences_df)
 # +
 # Scale the 'w_eda' feature
 scaler = preprocessing.MinMaxScaler()
-eda_series_list = [scaler.fit_transform(np.asarray(i).reshape(-1, 1)) for i in sequences_df[METRIC]]
+eda_series_list_scaled = [scaler.fit_transform(np.asarray(i).reshape(-1, 1)) for i in sequences_df_balanced[METRIC]]
 
 # Convert the scaled feature back to a list of arrays
-eda_array_list = [np.array(series).flatten() for series in eda_series_list]
+eda_array_list = [np.array(series).flatten() for series in eda_series_list_scaled]
 
 # Separate the labels
-labels_list = [i for i in sequences_df['downsampled_label']]
+labels_list = [i for i in sequences_df_balanced['downsampled_label']]
 
 # Convert the labels list to numpy array
 labels_array = np.array(labels_list)
 
 # print(len(combined_series_list))
-print(f"EDA list Count:", len(eda_series_list),"\n" "Labels list Count:", len(labels_array))
-
-
+print(f"EDA list Count:", len(eda_series_list_scaled),"\n" "Labels list Count:", len(labels_array))
 
 # +
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from sklearn import model_selection
-from collections import Counter
-from imblearn.over_sampling import SMOTE
+from sklearn.model_selection import train_test_split
 import numpy as np
-import tensorflow.keras as keras
-
-max_sequence_length = 32  # Choose the desired maximum sequence length
-
-def apply_smote(x_train, y_train):
-    # Reshape input features if necessary
-    x_train_reshaped = x_train.reshape(x_train.shape[0], -1)
-    
-    # Apply SMOTE
-    smote = SMOTE(random_state=42)
-    x_train_resampled, y_train_resampled = smote.fit_resample(x_train_reshaped, y_train)
-    
-    # Reshape resampled features back to original shape
-    x_train_resampled = x_train_resampled.reshape(-1, x_train.shape[1], x_train.shape[2])
-    
-    return x_train_resampled, y_train_resampled
+import tensorflow as tf
+from tensorflow import keras
 
 # Padding sequences to ensure uniform length
-padded_series_list = pad_sequences(eda_series_list, maxlen=max_sequence_length, dtype='float32', padding='post', truncating='post')
+max_sequence_length = 32  # Choose the desired maximum sequence length
+padded_series_list = pad_sequences(eda_series_list_scaled, maxlen=max_sequence_length, dtype='float32', padding='post', truncating='post')
 
 # Splitting data into training and testing sets (70% train, 30% test)
-x_train, x_test, y_train, y_test = model_selection.train_test_split(
+x_temp, x_test, y_temp, y_test = train_test_split(
     padded_series_list, labels_list, test_size=0.30, random_state=42, shuffle=True
 )
 
 # Further splitting the training data into training and validation sets (80% train, 20% val from the original 70% train)
-x_train, x_val, y_train, y_val = model_selection.train_test_split(
-    x_train, y_train, test_size=0.20, random_state=42, shuffle=True
+x_train, x_val, y_train, y_val = train_test_split(
+    x_temp, y_temp, test_size=0.20, random_state=42, shuffle=True
 )
 
-# Convert to numpy arrays
-x_train = np.asarray(x_train).astype(np.float32).reshape(-1, max_sequence_length, 1) 
-y_train = np.asarray(y_train).astype(np.float32)
+# Convert to numpy arrays and reshape for compatibility with Keras
+x_train = np.asarray(x_train).astype(np.float32).reshape(-1, max_sequence_length, 1)  # Assuming 1 feature (EDA or TEMP)
+y_train = np.asarray(y_train).astype(np.float32).reshape(-1, 1)  # Do not one-hot encode
 
-x_val = np.asarray(x_val).astype(np.float32).reshape(-1, max_sequence_length, 1) 
-y_val = np.asarray(y_val).astype(np.float32)
+x_val = np.asarray(x_val).astype(np.float32).reshape(-1, max_sequence_length, 1)  # Assuming 1 feature (EDA or TEMP)
+y_val = np.asarray(y_val).astype(np.float32).reshape(-1, 1)  # Do not one-hot encode
 
-x_test = np.asarray(x_test).astype(np.float32).reshape(-1, max_sequence_length, 1)
-y_test = np.asarray(y_test).astype(np.float32)
+x_test = np.asarray(x_test).astype(np.float32).reshape(-1, max_sequence_length, 1)  # Assuming 1 feature (EDA or TEMP)
+y_test = np.asarray(y_test).astype(np.float32).reshape(-1, 1)  # Do not one-hot encode
 
 # Check lengths of train, validation, and test sets
 print(
     f"Length of x_train : {len(x_train)}\nLength of x_val : {len(x_val)}\nLength of x_test : {len(x_test)}\n"
     f"Length of y_train : {len(y_train)}\nLength of y_val : {len(y_val)}\nLength of y_test : {len(y_test)}"
 )
-
-# Check the class distribution before SMOTE
-print("Class distribution before SMOTE:", Counter(y_train))
-
-# Apply SMOTE using the function
-x_train_resampled, y_train_resampled = apply_smote(x_train, y_train)
-
-# Check the class distribution after SMOTE
-class_distribution_after = Counter(y_train_resampled)
-print("Class distribution after SMOTE:", {0: class_distribution_after[0], 1: class_distribution_after[1]})
-
-# +
-import matplotlib.pyplot as plt
-from collections import Counter
-
-# Class distribution before SMOTE
-class_distribution_before = Counter(y_train)
-# Class distribution after SMOTE
-class_distribution_after = Counter(y_train_resampled)
-
-# Define labels
-labels = ['No Stress', 'Stress']
-
-# Plotting
-plt.figure(figsize=(10, 5))
-
-# Plot before SMOTE
-plt.subplot(1, 2, 1)
-plt.bar(labels, class_distribution_before.values(), color='blue')
-plt.title('Class Distribution Before SMOTE')
-plt.xlabel('Class')
-plt.ylabel('Count')
-plt.xticks([0, 1], labels)
-
-# Plot after SMOTE
-plt.subplot(1, 2, 2)
-plt.bar(labels, class_distribution_after.values(), color='green')
-plt.title('Class Distribution After SMOTE')
-plt.xlabel('Class')
-plt.ylabel('Count')
-plt.xticks([0, 1], labels)
-
-plt.tight_layout()
-plt.show()
 
 
 # +
@@ -507,6 +398,7 @@ def plot_dataset_distribution(x_train, y_train, x_test, y_test, x_val, y_val):
     plt.ylabel('Number of Samples')
     plt.title('Dataset Distribution')
     plt.legend()
+    plt.savefig("dataset_distribution.png")
     plt.show()
 
 
@@ -542,7 +434,7 @@ def SplitDatasetForFolds(train_index, val_index, fold_nr):
 
 # +
 vals_dict = {}
-for i in sequences_df['downsampled_label']:
+for i in sequences_df_balanced['downsampled_label']:
     if i in vals_dict.keys():
         vals_dict[i] += 1
     else:
@@ -579,8 +471,6 @@ def plot_history_metrics(history_dict: dict):
         plt.title(str(key))
     plt.show()
 
-
-# +
 
 def create_model():
     input_layer = keras.Input(shape=(32, 1))
@@ -663,8 +553,7 @@ for train_index, val_index in kfold.split(x_train):
         train_dataset,
         epochs=25,
         validation_data=val_dataset,
-        callbacks=callbacks,
-        class_weight=weight_dict
+        callbacks=callbacks
     )
 
     # Append history
