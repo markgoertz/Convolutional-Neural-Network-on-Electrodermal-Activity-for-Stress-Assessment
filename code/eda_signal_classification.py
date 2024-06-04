@@ -38,9 +38,8 @@ import os
 import cvxEDA
 
 # +
-
 MAIN_PATH = os.path.dirname(os.getcwd())
-DATA_PATH = MAIN_PATH + "/data"
+DATA_PATH = MAIN_PATH + "/data/"
 
 QUALITY_THRESHOLD = 64
 BATCH_SIZE = 32
@@ -102,18 +101,6 @@ for unique_id in unique_ids:
     })
 
     new_dataframe_eda = pd.concat([new_dataframe_eda, temp_df], ignore_index=True)
-
-    # # Plotting
-    # plt.plot(tonic, label='Tonic')
-    # plt.plot(phasic, label='Phasic')
-    # plt.plot(subset_data['w_eda'].values, label='EDA')
-    
-    # plt.xlabel('Time')
-    # plt.ylabel('EDA Levels')
-    # plt.title(f'Phasic and Tonic EDA for ID: {unique_id}')
-    # plt.legend()
-    # plt.show()
-
 # -
 
 dataset = pd.concat([dataset, new_dataframe_eda], axis=1)
@@ -200,7 +187,6 @@ def create_sequences_df(merged_df, max_length=32):
 # Create sequences DataFrame
 sequences_df = create_sequences_df(dataset)
 
-
 # +
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -232,7 +218,6 @@ for i, unique_id in enumerate(unique_ids):
 # Adjust layout
 plt.tight_layout()
 plt.show()
-
 # -
 
 sequences_df
@@ -245,7 +230,6 @@ print("Number of unique labels before replacement:", len(unique_labels_before), 
 
 sequences_df['downsampled_label'] = sequences_df['downsampled_label'].apply(lambda x : 1 if x == 2.0 else 0)
 
-
 # +
 from sklearn import preprocessing
 
@@ -257,7 +241,6 @@ print("Number of unique labels after replacement:", len(unique_labels_after))
 le = preprocessing.LabelEncoder()  # Generates a look-up table
 le.fit(sequences_df['downsampled_label'])
 sequences_df['downsampled_label'] = le.transform(sequences_df['downsampled_label'])
-
 # -
 
 num_classes = len(sequences_df['downsampled_label'].unique())
@@ -296,30 +279,6 @@ def plot_label_distribution(df):
 
 plot_label_distribution(sequences_df)
 
-
-# +
-import pandas as pd
-from sklearn.utils import resample
-
-# Separate the majority ('no-stress') and minority ('stress') classes
-df_no_stress = sequences_df[sequences_df['downsampled_label'] == 0]
-df_stress = sequences_df[sequences_df['downsampled_label'] == 1]
-
-# Downsample the majority class ('no-stress') to match the minority class ('stress')
-df_no_stress_downsampled = resample(df_no_stress,
-                                    replace=False,  # Sample without replacement
-                                    n_samples=len(df_stress),  # Match the number of 'stress' samples
-                                    random_state=42)  # Ensure reproducibility
-
-# Combine the downsampled 'no-stress' class with the 'stress' class
-sequences_df_balanced = pd.concat([df_no_stress_downsampled, df_stress])
-
-# Shuffle the combined dataset to mix the samples
-sequences_df_balanced = sequences_df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
-# -
-
-plot_label_distribution(sequences_df_balanced)
-
 # ****Scale and split data****
 #
 # We perform a simple Min-Max scaling to bring the value-range between 0 and 1.
@@ -327,56 +286,115 @@ plot_label_distribution(sequences_df_balanced)
 # +
 # Scale the 'w_eda' feature
 scaler = preprocessing.MinMaxScaler()
-eda_series_list_scaled = [scaler.fit_transform(np.asarray(i).reshape(-1, 1)) for i in sequences_df_balanced[METRIC]]
+eda_series_list = [scaler.fit_transform(np.asarray(i).reshape(-1, 1)) for i in sequences_df[METRIC]]
 
 # Convert the scaled feature back to a list of arrays
-eda_array_list = [np.array(series).flatten() for series in eda_series_list_scaled]
+eda_array_list = [np.array(series).flatten() for series in eda_series_list]
 
 # Separate the labels
-labels_list = [i for i in sequences_df_balanced['downsampled_label']]
+labels_list = [i for i in sequences_df['downsampled_label']]
 
 # Convert the labels list to numpy array
 labels_array = np.array(labels_list)
 
 # print(len(combined_series_list))
-print(f"EDA list Count:", len(eda_series_list_scaled),"\n" "Labels list Count:", len(labels_array))
+print(f"EDA list Count:", len(eda_series_list),"\n" "Labels list Count:", len(labels_array))
 
 # +
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from sklearn.model_selection import train_test_split
+from sklearn import model_selection
+from collections import Counter
+from imblearn.over_sampling import SMOTE
 import numpy as np
-import tensorflow as tf
-from tensorflow import keras
+import tensorflow.keras as keras
+
+max_sequence_length = 32  # Choose the desired maximum sequence length
+
+def apply_smote(x_train, y_train):
+    # Reshape input features if necessary
+    x_train_reshaped = x_train.reshape(x_train.shape[0], -1)
+    
+    # Apply SMOTE
+    smote = SMOTE(random_state=42)
+    x_train_resampled, y_train_resampled = smote.fit_resample(x_train_reshaped, y_train)
+    
+    # Reshape resampled features back to original shape
+    x_train_resampled = x_train_resampled.reshape(-1, x_train.shape[1], x_train.shape[2])
+    
+    return x_train_resampled, y_train_resampled
 
 # Padding sequences to ensure uniform length
-max_sequence_length = 32  # Choose the desired maximum sequence length
-padded_series_list = pad_sequences(eda_series_list_scaled, maxlen=max_sequence_length, dtype='float32', padding='post', truncating='post')
+padded_series_list = pad_sequences(eda_series_list, maxlen=max_sequence_length, dtype='float32', padding='post', truncating='post')
 
 # Splitting data into training and testing sets (70% train, 30% test)
-x_temp, x_test, y_temp, y_test = train_test_split(
+x_train, x_test, y_train, y_test = model_selection.train_test_split(
     padded_series_list, labels_list, test_size=0.30, random_state=42, shuffle=True
 )
 
 # Further splitting the training data into training and validation sets (80% train, 20% val from the original 70% train)
-x_train, x_val, y_train, y_val = train_test_split(
-    x_temp, y_temp, test_size=0.20, random_state=42, shuffle=True
+x_train, x_val, y_train, y_val = model_selection.train_test_split(
+    x_train, y_train, test_size=0.20, random_state=42, shuffle=True
 )
 
-# Convert to numpy arrays and reshape for compatibility with Keras
-x_train = np.asarray(x_train).astype(np.float32).reshape(-1, max_sequence_length, 1)  # Assuming 1 feature (EDA or TEMP)
-y_train = np.asarray(y_train).astype(np.float32).reshape(-1, 1)  # Do not one-hot encode
+# Convert to numpy arrays
+x_train = np.asarray(x_train).astype(np.float32).reshape(-1, max_sequence_length, 1) 
+y_train = np.asarray(y_train).astype(np.float32)
 
-x_val = np.asarray(x_val).astype(np.float32).reshape(-1, max_sequence_length, 1)  # Assuming 1 feature (EDA or TEMP)
-y_val = np.asarray(y_val).astype(np.float32).reshape(-1, 1)  # Do not one-hot encode
+x_val = np.asarray(x_val).astype(np.float32).reshape(-1, max_sequence_length, 1) 
+y_val = np.asarray(y_val).astype(np.float32)
 
-x_test = np.asarray(x_test).astype(np.float32).reshape(-1, max_sequence_length, 1)  # Assuming 1 feature (EDA or TEMP)
-y_test = np.asarray(y_test).astype(np.float32).reshape(-1, 1)  # Do not one-hot encode
+x_test = np.asarray(x_test).astype(np.float32).reshape(-1, max_sequence_length, 1)
+y_test = np.asarray(y_test).astype(np.float32)
 
 # Check lengths of train, validation, and test sets
 print(
     f"Length of x_train : {len(x_train)}\nLength of x_val : {len(x_val)}\nLength of x_test : {len(x_test)}\n"
     f"Length of y_train : {len(y_train)}\nLength of y_val : {len(y_val)}\nLength of y_test : {len(y_test)}"
 )
+
+# Check the class distribution before SMOTE
+print("Class distribution before SMOTE:", Counter(y_train))
+
+# Apply SMOTE using the function
+x_train_resampled, y_train_resampled = apply_smote(x_train, y_train)
+
+# Check the class distribution after SMOTE
+class_distribution_after = Counter(y_train_resampled)
+print("Class distribution after SMOTE:", {0: class_distribution_after[0], 1: class_distribution_after[1]})
+
+# +
+import matplotlib.pyplot as plt
+from collections import Counter
+
+# Class distribution before SMOTE
+class_distribution_before = Counter(y_train)
+# Class distribution after SMOTE
+class_distribution_after = Counter(y_train_resampled)
+
+# Define labels
+labels = ['No Stress', 'Stress']
+
+# Plotting
+plt.figure(figsize=(10, 5))
+
+# Plot before SMOTE
+plt.subplot(1, 2, 1)
+plt.bar(labels, class_distribution_before.values(), color='blue')
+plt.title('Class Distribution Before SMOTE')
+plt.xlabel('Class')
+plt.ylabel('Count')
+plt.xticks([0, 1], labels)
+
+# Plot after SMOTE
+plt.subplot(1, 2, 2)
+plt.bar(labels, class_distribution_after.values(), color='green')
+plt.title('Class Distribution After SMOTE')
+plt.xlabel('Class')
+plt.ylabel('Count')
+plt.xticks([0, 1], labels)
+
+plt.tight_layout()
+plt.show()
 
 
 # +
@@ -439,7 +457,7 @@ def SplitDatasetForFolds(train_index, val_index, fold_nr):
 
 # +
 vals_dict = {}
-for i in sequences_df_balanced['downsampled_label']:
+for i in sequences_df['downsampled_label']:
     if i in vals_dict.keys():
         vals_dict[i] += 1
     else:
@@ -452,8 +470,6 @@ total = sum(vals_dict.values())
 
 weight_dict = {k: (1 - (v / total)) for k, v in vals_dict.items()}
 print(weight_dict)
-
-
 # -
 
 # Assuming your one-hot encoded labels are in a variable named 'labels'
@@ -556,9 +572,10 @@ for train_index, val_index in kfold.split(x_train):
     # Train the model
     history = model.fit(
         train_dataset,
-        epochs=25,
+        epochs=50,
         validation_data=val_dataset,
-        callbacks=callbacks
+        callbacks=callbacks,
+        class_weight=weight_dict
     )
 
     # Append history
@@ -637,19 +654,19 @@ plot_metrics(history_list, metrics, val_metrics, colors)
 from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score, confusion_matrix
 
 # Generate predictions on the test set
-y_pred_probs = best_model.predict(x_train, verbose=0)
+y_pred_probs = best_model.predict(x_train_resampled, verbose=0)
 y_pred = (y_pred_probs > 0.5).astype(int).flatten()
 
 # Compute the confusion matrix
-conf_matrix = confusion_matrix(y_train, y_pred)
+conf_matrix = confusion_matrix(y_train_resampled, y_pred)
 print("Confusion Matrix:")
 print(conf_matrix)
 
 # Compute metrics
-precision = precision_score(y_val, y_pred)
-recall = recall_score(y_val, y_pred)
-accuracy = accuracy_score(y_val, y_pred)
-auc = roc_auc_score(y_val, y_pred_probs)
+precision = precision_score(y_train_resampled, y_pred)
+recall = recall_score(y_train_resampled, y_pred)
+accuracy = accuracy_score(y_train_resampled, y_pred)
+auc = roc_auc_score(y_train_resampled, y_pred_probs)
 
 print(f"Precision: {precision}")
 print(f"Recall: {recall}")
