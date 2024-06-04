@@ -728,55 +728,55 @@ view_evaluated_eeg_plots(best_model, sequences_df, scaler)
 
 
 # +
-import numpy as np
-import matplotlib.pyplot as plt
+# import numpy as np
+# import matplotlib.pyplot as plt
 
-def view_evaluated_eeg_plots(model, sequences_df, scaler, target_id):
-    def plot_signals(data, labels, predictions, ids, times):
-        total_plots = len(data)
-        cols = total_plots // 5
-        rows = total_plots // cols
-        if total_plots % cols != 0:
-            rows += 1
-        fig, axes = plt.subplots(rows, cols, figsize=(cols*5, rows*3))
-        for i, (plot_data, og_label, pred_label, id_, time) in enumerate(zip(data, labels, predictions, ids, times)):
-            if len(plot_data) == 0:  # Skip empty plots
-                continue
-            ax = axes[i // cols, i % cols] if rows > 1 else axes[i % cols]
-            color = 'green' if og_label == pred_label else 'red'
-            ax.plot(time, plot_data, color=color)
-            ax.set_title(f"ID: {id_}\nActual Label: {og_label}\nPredicted Label: {pred_label}")
-            ax.set_xlabel('Time')
-            ax.set_ylabel('Data')
-        plt.tight_layout()
-        plt.show()
+# def view_evaluated_eeg_plots(model, sequences_df, scaler, target_id):
+#     def plot_signals(data, labels, predictions, ids, times):
+#         total_plots = len(data)
+#         cols = total_plots // 5
+#         rows = total_plots // cols
+#         if total_plots % cols != 0:
+#             rows += 1
+#         fig, axes = plt.subplots(rows, cols, figsize=(cols*5, rows*3))
+#         for i, (plot_data, og_label, pred_label, id_, time) in enumerate(zip(data, labels, predictions, ids, times)):
+#             if len(plot_data) == 0:  # Skip empty plots
+#                 continue
+#             ax = axes[i // cols, i % cols] if rows > 1 else axes[i % cols]
+#             color = 'green' if og_label == pred_label else 'red'
+#             ax.plot(time, plot_data, color=color)
+#             ax.set_title(f"ID: {id_}\nActual Label: {og_label}\nPredicted Label: {pred_label}")
+#             ax.set_xlabel('Time')
+#             ax.set_ylabel('Data')
+#         plt.tight_layout()
+#         plt.show()
 
-    def generate_signals_for_id(target_id):
-        filtered_df = sequences_df[sequences_df['ID'] == target_id]
-        filtered_df = filtered_df.sort_values(by='Time')  # Sort by time
-        data = filtered_df['w_eda']
-        times = filtered_df['Time']
-        data_array = [scaler.fit_transform(np.asarray(i).reshape(-1, 1)) for i in data]
-        data_array = np.asarray(data_array).astype(np.float32).reshape(-1, 32, 1)
-        labels = filtered_df['downsampled_label'].tolist()
-        ids = filtered_df['ID'].tolist()  # Extract IDs
-        predictions = (model.predict(data_array, verbose=0) > 0.5).astype(int).flatten()
-        return data, labels, predictions, ids, times
+#     def generate_signals_for_id(target_id):
+#         filtered_df = sequences_df[sequences_df['ID'] == target_id]
+#         filtered_df = filtered_df.sort_values(by='Time')  # Sort by time
+#         data = filtered_df['w_eda']
+#         times = filtered_df['Time']
+#         data_array = [scaler.fit_transform(np.asarray(i).reshape(-1, 1)) for i in data]
+#         data_array = np.asarray(data_array).astype(np.float32).reshape(-1, 32, 1)
+#         labels = filtered_df['downsampled_label'].tolist()
+#         ids = filtered_df['ID'].tolist()  # Extract IDs
+#         predictions = (model.predict(data_array, verbose=0) > 0.5).astype(int).flatten()
+#         return data, labels, predictions, ids, times
 
-    data, labels, predictions, ids, times = generate_signals_for_id(target_id)
+#     data, labels, predictions, ids, times = generate_signals_for_id(target_id)
     
-    print(f"Plotting signals for ID: {target_id}")
-    plot_signals(data, labels, predictions, ids, times)
+#     print(f"Plotting signals for ID: {target_id}")
+#     plot_signals(data, labels, predictions, ids, times)
 
-    # Create confusion matrix
-    cm = confusion_matrix(labels, predictions)
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['0', '1'], yticklabels=['0', '1'])
-    plt.xlabel('Predicted Label')
-    plt.ylabel('Actual Label')
-    plt.title('Confusion Matrix')
-    plt.show()
+#     # Create confusion matrix
+#     cm = confusion_matrix(labels, predictions)
+#     plt.figure(figsize=(8, 6))
+#     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['0', '1'], yticklabels=['0', '1'])
+#     plt.xlabel('Predicted Label')
+#     plt.ylabel('Actual Label')
+#     plt.title('Confusion Matrix')
+#     plt.show()
 
-# Call the function with the required arguments
-view_evaluated_eeg_plots(best_model, sequences_df_balanced, scaler, target_id='S2')
+# # Call the function with the required arguments
+# view_evaluated_eeg_plots(best_model, sequences_df_balanced, scaler, target_id='S2')
 
