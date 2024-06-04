@@ -69,6 +69,6 @@ jobs:
 
         echo "\n## Model Performance" >> report.md
         echo "Model performance metrics are on the plot below." >> report.md
-        echo '![](./code/model_results.png)' >> report.md
+        echo '![](code/model_results.png)' >> report.md
 
         cml comment create --publish report.md        
