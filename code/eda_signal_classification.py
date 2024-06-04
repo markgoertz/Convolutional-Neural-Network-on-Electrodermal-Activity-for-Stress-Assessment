@@ -664,7 +664,7 @@ for train_index, val_index in kfold.split(x_train):
     # Train the model
     history = model.fit(
         train_dataset,
-        epochs=25,
+        epochs=1,
         validation_data=val_dataset,
         callbacks=callbacks,
         class_weight=weight_dict
