@@ -59,7 +59,12 @@ METRIC = "w_eda"
 #
 # - adjust if necessary. This defines the model's performance
 
-dataset = pd.read_csv(DATA_PATH + "/merged_data.csv")
+# +
+# dataset = pd.read_csv(DATA_PATH + "/merged_data.csv")
+
+# IMPORTANT : UNCOMMIT THE FOLLOWING LINE WHEN CONVERTING TO PYTHON FILE. GITHUB ACTIONS ONLY ACCEPT RELATIVE PATHS!
+dataset = pd.read_csv("/data/merged_data.csv")
+
 
 # +
 import cvxEDA.src.cvxEDA
