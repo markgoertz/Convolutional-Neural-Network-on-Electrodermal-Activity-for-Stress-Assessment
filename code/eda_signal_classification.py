@@ -63,7 +63,7 @@ METRIC = "w_eda"
 # dataset = pd.read_csv(DATA_PATH + "/merged_data.csv")
 
 # IMPORTANT : UNCOMMIT THE FOLLOWING LINE WHEN CONVERTING TO PYTHON FILE. GITHUB ACTIONS ONLY ACCEPT RELATIVE PATHS!
-dataset = pd.read_csv("/data/merged_data.csv")
+dataset = pd.read_csv("data/merged_data.csv")
 
 
 # +
