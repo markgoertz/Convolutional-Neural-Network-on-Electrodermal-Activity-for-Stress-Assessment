@@ -64,12 +64,16 @@ jobs:
          # Your ML workflow goes here
          pip install -r requirements.txt
          python code/eda_signal_classification.py
+
     - name: Write CML report
-      env:
-        REPO_TOKEN: ${{ secrets.TOKEN }}
       run: |
-        # Post CML report as a comment in GitHub
+        echo "## Model Metrics" > report.md
         cat metrics.txt >> report.md
-        echo '![](./code/confusion_matrix.png)' >> report.md
-        cml comment create report.md
+        
+        echo "\n## Model Performance" >> report.md
+        echo "Model performance metrics are on the plot below." >> report.md
+        
+        cml-publish code/model_results.png --md >> report.md
+        
+        cml-send-comment report.md
         

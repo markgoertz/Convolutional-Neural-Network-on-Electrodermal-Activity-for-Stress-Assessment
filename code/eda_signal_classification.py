@@ -774,7 +774,7 @@ sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['No Str
 plt.xlabel('Predicted Label')
 plt.ylabel('True Label')
 plt.title('Confusion Matrix')
-plt.savefig('confusion_matrix.png')
+plt.savefig('model_results.png', dpi = 120)
 plt.show()
 
 
