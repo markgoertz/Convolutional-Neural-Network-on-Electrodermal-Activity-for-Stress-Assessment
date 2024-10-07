@@ -1,8 +1,8 @@
 kernel_sizes: [3]
-epochs: 10
+epochs: 20
 batch_size: 32
 learning_rate: 0.001
-folds: 2
+folds: 5
 activation: 'relu'
 
 input_shape: 32

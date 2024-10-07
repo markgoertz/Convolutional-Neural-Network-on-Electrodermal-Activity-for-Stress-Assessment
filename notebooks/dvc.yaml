@@ -1,0 +1,3 @@
+plots:
+- dvclive/plots/metrics:
+    x: step
