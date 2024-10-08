@@ -14,8 +14,6 @@ stages:
     - model.input_shape
     - model.input_features
     - model.shuffle_buffer_size
-    - model.exp_name
-    - model.exp_message
     # metrics:
     # - dvclive/plots/metrics
 

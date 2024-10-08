@@ -10,18 +10,16 @@ stages:
       nfiles: 8
     - path: params.yaml
       hash: md5
-      md5: 97792b858c0ece0186ba404c7e342c28
-      size: 258
+      md5: 1861a8515757dfe01c65269e5040dad1
+      size: 183
     params:
       params.yaml:
         model.activation: relu
         model.batch_size: 32
-        model.epochs: 3
-        model.exp_message: this better be working now
-        model.exp_name: 3 epochs experiment
-        model.folds: 2
+        model.epochs: 10
+        model.folds: 4
         model.input_features: 1
         model.input_shape: 32
-        model.kernel_size: 3
+        model.kernel_size: 2
         model.learning_rate: 0.001
         model.shuffle_buffer_size: 1024

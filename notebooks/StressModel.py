@@ -276,27 +276,27 @@ def Cross_validation_training(numpy_data, weight_dict):
     # Initialize KFold with the number of splits
     kfold = KFold(n_splits=config['model']['folds'], shuffle=True, random_state=42)
 
-    # Create a Live instance with the experiment name
-    live = Live(exp_name=config['model']['exp_name'], exp_message=config['model']['exp_message'])
-
     try:
         for fold_number, (train_index, val_index) in enumerate(kfold.split(numpy_data['x_train']), start=1):
             print(f"Training fold {fold_number}")
             
-            # Logging the current fold number
-            print(f"Logging fold_number: {fold_number}")
-            live.log_metric("fold_number", fold_number)
+            # Modify the experiment name to a simpler format without "branch" or underscores
+            exp_mess = f"fold-{fold_number}".lower()
+            print(f"Experiment name: {exp_mess}")
+            # Create a Live instance with the updated experiment name
+            live = Live(exp_message=f"Training fold {exp_mess}")
 
             # Train the current fold and calculate score
             score = Train_fold(train_index, val_index, fold_number, numpy_data, weight_dict, live)
             scores.append(score)
-            fold_number += 1
+
+            live.end()  # End the live logging for this fold
 
     except Exception as e:
         print(f"An error occurred during cross-validation training: {e}")
-    finally:
-        live.end()  # Ensure the live logging session ends
+
     return scores
+
 
 
 def main():
