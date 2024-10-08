@@ -1,0 +1,27 @@
+schema: '2.0'
+stages:
+  training:
+    cmd: python notebooks/StressModel.py
+    deps:
+    - path: data/numpy/
+      hash: md5
+      md5: 19f40ab766af6dc395fb815a11bf4c3a.dir
+      size: 2396032
+      nfiles: 8
+    - path: params.yaml
+      hash: md5
+      md5: 97792b858c0ece0186ba404c7e342c28
+      size: 258
+    params:
+      params.yaml:
+        model.activation: relu
+        model.batch_size: 32
+        model.epochs: 3
+        model.exp_message: this better be working now
+        model.exp_name: 3 epochs experiment
+        model.folds: 2
+        model.input_features: 1
+        model.input_shape: 32
+        model.kernel_size: 3
+        model.learning_rate: 0.001
+        model.shuffle_buffer_size: 1024
