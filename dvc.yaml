@@ -14,11 +14,9 @@ stages:
     - model.input_shape
     - model.input_features
     - model.shuffle_buffer_size
-    # metrics:
-    # - dvclive/plots/metrics
 
 plots:
 - dvclive/plots/metrics:
     x: step
-metrics:
-- dvclive/metrics.json
+params:
+- dvclive/params.yaml

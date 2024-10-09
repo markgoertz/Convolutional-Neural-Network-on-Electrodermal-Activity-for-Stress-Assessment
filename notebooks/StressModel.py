@@ -1,3 +1,4 @@
+import keras.callbacks
 from sklearn.model_selection import KFold
 import os
 import numpy as np
@@ -226,47 +227,57 @@ def save_history_to_json(history, fold_number, best_model):
     with open('metrics.json', 'w') as f:
         json.dump(existing_metrics, f, indent=4)
 
-def Train_fold(train_index, val_index, fold_number, numpy_data, weight_dict, live):
-    global BEST_VAL_SCORE, HISTORY 
-
-    # Split data into training and validation sets for this fold
-    train_dataset, validation_dataset, test_sj1, test_sj2 = SplitDatasetForFolds(train_index, val_index, fold_number, numpy_data)
-
-    # Create and compile the model
-    model = Compile_model()
-
-    # Set up DVC Live callback for this fold
-    live_callback = DVCLiveCallback()  # No need to pass live here
-
-    # Set up other callbacks
-    callbacks = [
-        keras.callbacks.ModelCheckpoint(
-            os.path.join(MODEL_PATH, f"best_model_fold_{fold_number}.keras"),
-            save_best_only=True,
-            monitor="val_accuracy"
-        ),
-        keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001),
-        live_callback  # Add DVCLiveCallback to the list
-    ]
-
-    print("Starting training...")
-    # Train the model
-    history = model.fit(
-        train_dataset,
-        epochs=config['model']['epochs'],
-        validation_data=(validation_dataset),
-        callbacks=callbacks,
-        class_weight=weight_dict
-    )
-
-    # Create models directory if it doesn't exist
-    os.makedirs(MODEL_PATH, exist_ok=True)
+def Train_fold(train_index, val_index, fold_number, numpy_data, weight_dict):
+    exp_mess = f"fold-{fold_number}".lower()
+    print(f"Experiment name: {exp_mess}")
     
-    # Save the model to the models directory
-    model.save(os.path.join(MODEL_PATH, f'model_{fold_number}.h5'))
-    print(f'Model saved to models/model_{fold_number}.h5')
+    with Live(exp_message=f"Training fold {exp_mess}") as live:
+        # Split data into training and validation sets for this fold
+        train_dataset, validation_dataset, test_dataset_subject1, test_dataset_subject2 = SplitDatasetForFolds(train_index, val_index, fold_number, numpy_data)
 
-    print(f"Training fold {fold_number} completed\n")
+        # Create and compile the model
+        model = Compile_model()    
+            # Set up callbacks
+        callbacks = [
+            keras.callbacks.ModelCheckpoint(
+                os.path.join(MODEL_PATH, f"best_model_fold_{fold_number}.keras"),
+                save_best_only=True,
+                monitor="val_accuracy"
+            ),
+            keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001),
+            DVCLiveCallback()
+            # Add any other callbacks you need here
+        ]
+
+        # Log parameters for this fold
+        live.log_param("fold_number", fold_number)
+        live.log_param("epochs", config['model']['epochs'])
+        live.log_param("batch_size", config['model']['batch_size'])
+        live.log_param("learning_rate", config['model']['learning_rate'])
+        live.log_param("folds", config['model']['folds'])
+        live.log_param("kernel_size", config['model']['kernel_size'])
+        live.log_param("activation", config['model']['activation'])
+        live.log_param("input_shape", config['model']['input_shape'])
+        live.log_param("input_features", config['model']['input_features'])
+        live.log_param("shuffle_buffer_size", config['model']['shuffle_buffer_size'])
+        
+        print("Starting training...")
+        
+        # Train the model
+        model.fit(
+            train_dataset,
+            epochs=config['model']['epochs'],
+            validation_data=(validation_dataset),
+            callbacks=callbacks,
+            class_weight=weight_dict
+        )
+
+        # Save the model to the models directory
+        os.makedirs(MODEL_PATH, exist_ok=True)
+        model.save(os.path.join(MODEL_PATH, f'model_{fold_number}.h5'))
+        print(f'Model saved to {MODEL_PATH}/model_{fold_number}.h5')
+
+        print(f"Training fold {fold_number} completed\n")
 
 
 def Cross_validation_training(numpy_data, weight_dict):
@@ -279,23 +290,14 @@ def Cross_validation_training(numpy_data, weight_dict):
     try:
         for fold_number, (train_index, val_index) in enumerate(kfold.split(numpy_data['x_train']), start=1):
             print(f"Training fold {fold_number}")
-            
-            # Modify the experiment name to a simpler format without "branch" or underscores
-            exp_mess = f"fold-{fold_number}".lower()
-            print(f"Experiment name: {exp_mess}")
-            # Create a Live instance with the updated experiment name
-            live = Live(exp_message=f"Training fold {exp_mess}")
 
-            # Train the current fold and calculate score
-            score = Train_fold(train_index, val_index, fold_number, numpy_data, weight_dict, live)
+            score = Train_fold(train_index, val_index, fold_number, numpy_data, weight_dict)
             scores.append(score)
-
-            live.end()  # End the live logging for this fold
-
+          
     except Exception as e:
         print(f"An error occurred during cross-validation training: {e}")
-
-    return scores
+    
+    return scores  
 
 
 
@@ -314,7 +316,6 @@ def main():
     Cross_validation_training(numpy_data, weight_dict)
     
     return numpy_data;
-
 
 numpy = main()
 
