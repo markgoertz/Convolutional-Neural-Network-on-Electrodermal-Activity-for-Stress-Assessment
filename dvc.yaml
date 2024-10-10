@@ -3,7 +3,7 @@ stages:
     cmd: python notebooks/StressModel.py
     deps:
     - params.yaml
-    - data/numpy/
+    - data/results/
     params:
     - model.kernel_size
     - model.epochs
