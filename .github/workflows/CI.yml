@@ -49,7 +49,7 @@ jobs:
       run: ls -l data
     
     - name: Install DVC
-      run: iterative/setup-dvc@v1
+      uses: iterative/setup-dvc@v1
     
     - name: Install CML
       uses: iterative/setup-cml@v2
