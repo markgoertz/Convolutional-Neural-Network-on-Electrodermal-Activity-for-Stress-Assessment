@@ -20,9 +20,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.x'
 
       - name: Install dependencies
         run: |
@@ -51,7 +51,8 @@ jobs:
     - uses: iterative/setup-dvc@v2
     - name: Train model
       run: | 
-        pip install -r requirements.txt
+        python -m pip install --upgrade pip
+        pip install tensorflow scikit-learn numpy pandas matplotlib dvclive PyYAML
         dvc pull data --run-cache
         dvc repro 
 
