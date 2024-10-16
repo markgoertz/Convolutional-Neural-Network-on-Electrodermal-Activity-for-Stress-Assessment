@@ -60,7 +60,7 @@ jobs:
         dvc metrics show
         dvc plots show --html -o plots.html
     - name: Upload plots
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: plots
         path: plots.html
