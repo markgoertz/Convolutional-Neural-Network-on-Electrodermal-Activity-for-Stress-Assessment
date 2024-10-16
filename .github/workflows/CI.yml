@@ -6,7 +6,7 @@ on:
       - main
   pull_request:
     branches:
-      - main
+      - '**'
 
 jobs:
   build:
@@ -44,36 +44,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-     # may need to setup NodeJS & Python3 on e.g. self-hosted
-     # - uses: actions/setup-node@v3
-     #   with:
-     #     node-version: '16'
-     # - uses: actions/setup-python@v4
-     #   with:
-     #     python-version: '3.x'
     - name: List contents of data directory
       run: ls -l data
     
     - uses: iterative/setup-cml@v2
+    - uses: iterative/setup-dvc@v2
+    - name: Train model
+      run: | 
+        pip install -r requirements.txt
+        dvc pull data --run-cache
+        dvc repro 
+
+    - name: Evaluate model
+      run: |
+        dvc metrics show
+        dvc plots show --html -o plots.html
+    - name: Upload plots
+      uses: actions/upload-artifact@v2
+      with:
+        name: plots
+        path: plots.html
+
     - name: Write CML report
       env:
         REPO_TOKEN: ${{ secrets.TOKEN }}
       run: |
-        # Your ML workflow goes here
-        pip install -r requirements.txt
-        python code/eda_signal_classification.py
+        echo "## Metrics: workflow vs. main" >> report.md
+        git fetch --depth=1 origin main:main
         
-        # Post CML report as a comment in GitHub
-        echo "## Model Metrics" > report.md
-        cat code/metrics.txt >> report.md
+        dvc metrics diff -a main --show-md > report.md
+        echo "## Plots" >> report.md
+        echo "### Class "
 
-        echo "## Model data input" >> report.md
-        echo '![](dataset_distribution.png)' >> report.md
-
-        echo "## Model Performance" >> report.md
-        echo "Model performance metrics are on the plot below." >> report.md
-        echo '![](model_results.png)' >> report.md
-        echo '![](folds.png)' >> report.md
         
+        git fetch --prune --unshallow
+        dvc metrics diff --show-md master >> report.md
 
+        
         cml comment create --publish report.md        
