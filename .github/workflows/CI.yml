@@ -24,10 +24,17 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Create virtual environment
+        run: |
+          python -m venv venv
+          echo "## [INFO] Virtual environment created at ./venv"
+
       - name: Install dependencies
         run: |
+          source venv/bin/activate
           python -m pip install --upgrade pip
           pip install scikit-learn pandas numpy matplotlib seaborn keras tensorflow cvxopt black[jupyter] jupyter nbconvert
+
   lint:
     needs: [build]
     runs-on: ubuntu-latest
@@ -43,43 +50,47 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: List contents of data directory
-      run: ls -l data
-    
-    - uses: iterative/setup-cml@v2
-    - uses: iterative/setup-dvc@v2
-    - name: Train model
-      run: | 
-        python -m pip install --upgrade pip
-        pip install tensorflow scikit-learn numpy pandas matplotlib dvclive PyYAML
-        dvc pull data --run-cache
-        dvc repro 
+      - uses: actions/checkout@v3
+      
+      - name: List contents of data directory
+        run: ls -l data
+      
+      - uses: iterative/setup-cml@v2
+      - uses: iterative/setup-dvc@v2
+      
+      - name: Train model
+        run: | 
+          source venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install tensorflow scikit-learn numpy pandas matplotlib dvclive PyYAML
+          dvc pull data --run-cache
+          dvc repro 
+      
+      - name: Evaluate model
+        run: |
+          source venv/bin/activate
+          dvc metrics show
+          dvc plots show --html -o plots.html
 
-    - name: Evaluate model
-      run: |
-        dvc metrics show
-        dvc plots show --html -o plots.html
-    - name: Upload plots
-      uses: actions/upload-artifact@v3
-      with:
-        name: plots
-        path: plots.html
+      - name: Upload plots
+        uses: actions/upload-artifact@v3
+        with:
+          name: plots
+          path: plots.html
 
-    - name: Write CML report
-      env:
-        REPO_TOKEN: ${{ secrets.TOKEN }}
-      run: |
-        echo "## Metrics: workflow vs. main" >> report.md
-        git fetch --depth=1 origin main:main
-        
-        dvc metrics diff -a main --show-md > report.md
-        echo "## Plots" >> report.md
-        echo "### Class "
-
-        
-        git fetch --prune --unshallow
-        dvc metrics diff --show-md master >> report.md
-
-        
-        cml comment create --publish report.md        
+      - name: Write CML report
+        env:
+          REPO_TOKEN: ${{ secrets.TOKEN }}
+        run: |
+          source venv/bin/activate
+          echo "## Metrics: workflow vs. main" >> report.md
+          git fetch --depth=1 origin main:main
+          
+          dvc metrics diff -a main --show-md > report.md
+          echo "## Plots" >> report.md
+          echo "### Class "
+          
+          git fetch --prune --unshallow
+          dvc metrics diff --show-md master >> report.md
+          
+          cml comment create --publish report.md         
