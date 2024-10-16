@@ -1,9 +1,16 @@
 stages:
   training:
-    cmd: python notebooks/StressModel.py
+    cmd: python notebooks/StressModel.py --config=params.yaml
     deps:
     - params.yaml
-    - data/results/
+    - data/results/x_test_1.pkl
+    - data/results/y_test_1.pkl
+    - data/results/x_test_2.pkl
+    - data/results/y_test_2.pkl
+    - data/results/x_train.pkl
+    - data/results/y_train.pkl
+    - data/results/x_val.pkl
+    - data/results/y_val.pkl
     params:
     - model.kernel_size
     - model.epochs
@@ -14,9 +21,9 @@ stages:
     - model.input_shape
     - model.input_features
     - model.shuffle_buffer_size
+    metrics:
+    - dvclive/plots/metrics.json
 
 plots:
 - dvclive/plots/metrics:
     x: step
-params:
-- dvclive/params.yaml

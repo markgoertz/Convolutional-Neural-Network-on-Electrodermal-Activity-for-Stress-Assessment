@@ -6,14 +6,11 @@ on:
       - main
   pull_request:
     branches:
-      - '**'
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    outputs:
-      merged_data: ${{ steps.extract.outputs.merged_data }}
 
     steps:
       - name: Checkout code
@@ -40,45 +37,39 @@ jobs:
           src: "./code"
           jupyter: true
 
-  run:
-    runs-on: ubuntu-latest
+  DVC-CML-Pipeline:
+    runs-on: [ubuntu-latest]
+    env:
+      REPO_TOKEN: ${{ secrets.TOKEN }}
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
+     
     - name: List contents of data directory
       run: ls -l data
     
-    - uses: iterative/setup-cml@v2
-    - uses: iterative/setup-dvc@v2
-    - name: Train model
-      run: | 
-        pip install -r requirements.txt
-        dvc pull data --run-cache
-        dvc repro 
-
-    - name: Evaluate model
-      run: |
-        dvc metrics show
-        dvc plots show --html -o plots.html
-    - name: Upload plots
-      uses: actions/upload-artifact@v3
+    - name: Install DVC
+      run: iterative/setup-dvc@v1
+    
+    - name: Install CML
+      uses: iterative/setup-cml@v2
+      
+    - name: Set-up python
+      uses: actions/setup-python@v2
       with:
-        name: plots
-        path: plots.html
+        python-version: '3.8'
 
-    - name: Write CML report
-      env:
-        REPO_TOKEN: ${{ secrets.TOKEN }}
+    - name: Install dependencies
       run: |
-        echo "## Metrics: workflow vs. main" >> report.md
-        git fetch --depth=1 origin main:main
-        
-        dvc metrics diff -a main --show-md > report.md
-        echo "## Plots" >> report.md
-        echo "### Class "
+        pip install -r requirements.txt
+    
+    - name: Train and Evaluate
+      run: |
+        dvc repro dvc.yaml:training
+        dvc metrics diff --show-md > code/metrics.txt
 
-        
-        git fetch --prune --unshallow
-        dvc metrics diff --show-md master >> report.md
-
-        
-        cml comment create --publish report.md        
+    - name: Generate Report
+      run: |          
+        git fetch --prune
+        dvc metrics diff --show-md main > report.md
+        cml comment create report.md  
