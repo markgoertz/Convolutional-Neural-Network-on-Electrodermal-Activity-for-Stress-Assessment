@@ -20,3 +20,10 @@ plots:
     x: step
 params:
 - dvclive/params.yaml
+artifacts:
+  Stress-Model:
+    path: models/best_model.h5
+    desc: A first commit of the model
+    type: model
+    labels:
+    - prod
