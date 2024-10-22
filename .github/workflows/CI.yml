@@ -65,7 +65,7 @@ jobs:
     
     - name: Train and Evaluate
       run: |
-        dvc repro dvc.yaml
+        dvc repro
         dvc metrics diff --md > metrics.md
         dvc params diff --md > params.md
 
