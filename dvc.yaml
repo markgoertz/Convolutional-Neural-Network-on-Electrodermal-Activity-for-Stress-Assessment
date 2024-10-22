@@ -1,29 +1,36 @@
 stages:
   training:
-    cmd: python notebooks/StressModel.py --config=params.yaml
+    cmd: python notebooks/stressModel.py
     deps:
-    - params.yaml
-    - data/results/x_test_1.pkl
-    - data/results/y_test_1.pkl
-    - data/results/x_test_2.pkl
-    - data/results/y_test_2.pkl
     - data/results/x_train.pkl
     - data/results/y_train.pkl
     - data/results/x_val.pkl
     - data/results/y_val.pkl
     params:
-    - model.kernel_size
-    - model.epochs
-    - model.batch_size
-    - model.learning_rate
-    - model.folds
-    - model.activation
-    - model.input_shape
-    - model.input_features
-    - model.shuffle_buffer_size
-    metrics:
-    - dvclive/plots/metrics.json
+    - params.yaml:
+      - model.learning_rate
+      - model.epochs
+      - model.batch_size
+      - model.input_shape
+      - model.input_features
+      - model.activation
+      - model.metrics
+      - model.kernel_size
+      - model.shuffle_buffer_size
 
+    outs:
+    - models/best_model.h5
+metrics:
+- dvclive/metrics.json
 plots:
 - dvclive/plots/metrics:
     x: step
+artifacts:
+  best_model:
+    path: models/best_model.h5
+    type: model
+    desc: This is a convolutional neural network model that is developed to detect
+      stress.
+    labels:
+    - no-stress
+    - stress

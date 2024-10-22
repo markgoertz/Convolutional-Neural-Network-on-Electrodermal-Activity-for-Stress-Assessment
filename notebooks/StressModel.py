@@ -12,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import keras
+import keras.losses
 import json
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
@@ -19,18 +20,18 @@ from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras import layers, models, regularizers, optimizers, callbacks
 from tensorflow.keras.metrics import BinaryAccuracy, AUC, Precision, Recall, Metric
 from tensorflow.keras.layers import Input, Conv1D, MaxPooling1D, Flatten, Dense, concatenate, Dropout
+from tensorflow.keras.models import Model  # Import Model here
 
 
-from dvclive import Live  # Ensure DVCLive is imported
+import dvc.api
+from dvclive import Live
 from dvclive.keras import DVCLiveCallback  # Import the callback
 import yaml
 import pickle
 
 
 # In[22]:
-
-
-MAIN_PATH = os.path.dirname(os.getcwd())
+MAIN_PATH = 'C:/Master of Applied IT/'
 DATA_PATH = MAIN_PATH + "/data/results"
 MODEL_PATH = MAIN_PATH + "/models"
 LOG_PATH = MAIN_PATH + "/logs"
@@ -47,12 +48,10 @@ HISTORY = []  # Initialize history_list
 # In[23]:
 
 
-def load_config(config_path=MAIN_PATH + "/params.yaml"):
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-    return config
+def load_config():
+    return dvc.api.params_show("params.yaml")
 
-config = load_config()  # This loads the configuration once and allows direct access
+config = load_config()
 
 
 # In[24]:
@@ -180,111 +179,57 @@ class F1Score(Metric):
 # In[30]:
 
 
-def create_cnn_branch(input_shape):
-    """Create a single CNN branch for a given input shape."""
-    input_layer = Input(shape=input_shape)
-    
-    x = layers.Conv1D(filters=32, kernel_size=config["model"]["kernel_size"], 
+def create_model_head(input_layer):
+    # First convolutional layer
+    x = tf.keras.layers.Conv1D(filters=32, kernel_size=config["model"]["kernel_size"], 
                       activation=config["model"]["activation"], padding="same", 
-                      kernel_regularizer=regularizers.l2(0.001))(input_layer)
-    x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling1D(pool_size=2)(x)
+                      kernel_regularizer=tf.keras.regularizers.l2(0.001))(input_layer)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)
     
-    x = layers.Conv1D(filters=64, kernel_size=3, activation=config["model"]["activation"], 
-                      padding="same", kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling1D(pool_size=2)(x)
+    # Second convolutional layer
+    x = tf.keras.layers.Conv1D(64, kernel_size=config["model"]["kernel_size"], activation=config["model"]["activation"])(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)   
     
-    x = layers.Conv1D(filters=128, kernel_size=3, activation=config["model"]["activation"], 
-                      padding="same", kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = tf.keras.layers.Conv1D(filters=128, kernel_size=config["model"]["kernel_size"], 
+                      activation=config["model"]["activation"], padding="same", 
+                      kernel_regularizer=tf.keras.regularizers.l2(0.001))(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)
     
-    x = layers.Flatten()(x)
-    return input_layer, x
+    # Flatten the output
+    x = tf.keras.layers.Flatten()(x)
+
+    return x  
 
 
 # In[31]:
 
 
-def create_cnn_model():
-    # Input shape for each branch: (timesteps, features), where features is typically 1 for each metric
-    input_shape = (config["model"]["input_shape"], 1)  # Each input will have one feature
+def build_model(input_layers, model_heads):
+    # Merge models using their outputs directly
+    combined = tf.keras.layers.concatenate(model_heads)
 
-    # Create a list to hold the inputs and the outputs of each branch
-    branches = []
-    
-    # Loop through each metric in the config file and create a branch for it
-    for metric in config['model']['metrics']:
-        input_layer, branch_output = create_cnn_branch(input_shape)
-        branches.append((input_layer, branch_output))
-    
-    # Extract input layers and output branches for concatenation
-    input_layers = [branch[0] for branch in branches]
-    branch_outputs = [branch[1] for branch in branches]
-    
-    # Concatenate outputs from all branches
-    concatenated = layers.concatenate(branch_outputs)
+    # Add additional layers after merging
+    x = tf.keras.layers.Dense(128, activation='relu')(combined)
+    x = tf.keras.layers.Dense(64, activation='relu')(x)
+    outputs = tf.keras.layers.Dense(1, activation='sigmoid')(x)  # Adjust based on your task
 
-    # Fully connected layers after concatenation
-    x = layers.Dense(512, activation="relu", kernel_regularizer=regularizers.l2(0.001))(concatenated)
-    x = layers.Dropout(0.5)(x)
+    # Final model
+    model = keras.Model(inputs=input_layers, outputs=outputs)
 
-    x = layers.Dense(256, activation="relu", kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.Dropout(0.5)(x)
-
-    # Output layer for binary classification
-    output_layer = layers.Dense(1, activation="sigmoid")(x)
-
-    # Create and return the model
-    model = models.Model(inputs=input_layers, outputs=output_layer)
-    
     return model
 
 
 # In[32]:
 
 
-# Function to dynamically create the multimodal model
-def create_multimodal_model():
-    input_shape = (config['model']['input_shape'], 1)  # Shape of each input (timesteps, 1)
-    branches = []  # To hold the input layers and branches
-
-    # Loop through the metrics in the config file
-    for metric in config['model']['metrics']:
-        print(f"Creating branch for metric: {metric}")
-        input_layer, branch = create_cnn_branch(input_shape, metric)
-        branches.append((input_layer, branch))  # Store input and output branches
-
-    # Separate inputs and outputs for concatenation
-    input_layers = [branch[0] for branch in branches]
-    output_branches = [branch[1] for branch in branches]
-
-    # Concatenate the outputs from different branches
-    concatenated = concatenate(output_branches)
-
-    # Fully connected layers after concatenation
-    x = Dense(128, activation='relu')(concatenated)
-    x = Dropout(0.5)(x)
-    x = Dense(64, activation='relu')(x)
-
-    # Output layer (adjust for binary or multi-class classification)
-    output = Dense(1, activation='sigmoid')(x)
-
-    # Create the model
-    model = keras.Model(inputs=input_layers, outputs=output)
-
-    return model
-
-
-# In[33]:
-
-
-# Compile model with optimizer and loss function
-def Compile_model():
-    model = create_multimodal_model()  # Dynamically create model based on metrics
+def compile_model(input_layers, model_heads):
+    model = build_model(input_layers, model_heads)
     optimizer = keras.optimizers.Adam(amsgrad=True, learning_rate=config["model"]["learning_rate"])
-    loss = keras.losses.BinaryCrossentropy()
+    loss = keras.losses.binary_crossentropy  # Ensure this is a callable, not a result
+
     model.compile(
         optimizer=optimizer,
         loss=loss,
@@ -294,194 +239,143 @@ def Compile_model():
             keras.metrics.Precision(name='precision'),
             keras.metrics.Recall(name='recall'),
             F1Score(name='f1_score')
-        ],
+        ]
     )
+    model.summary()
     return model
 
+
+# In[33]:
+
+
+def train_model(model, x_train, y_train, x_val, y_val, class_weight):
+    """Trains the model on the training data."""
+
+    with Live() as live:
+        for epoch in range(config['model']['epochs']):
+            model.fit(
+                x_train,
+                y_train,
+                validation_data=(x_val, y_val),
+                epochs=1,  # Train for one epoch at a time
+                class_weight=class_weight,
+                callbacks=[
+                    keras.callbacks.ModelCheckpoint(
+                        filepath=os.path.join(MODEL_PATH, 'best_model.h5'),  # Add filepath argument
+                        save_best_only=True,
+                        monitor="val_binary_accuracy"
+                    ),
+                    keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001),
+                    DVCLiveCallback(live=live)  # Add DVCLiveCallback to the list
+                ]
+            )
+            live.log_artifact(
+                os.path.join(MODEL_PATH, 'best_model.h5'),
+                type="model",
+                desc="This is a convolutional neural network model that is developed to detect stress.",
+                labels=["no-stress", "stress"],
+            )
+
+        model.save(os.path.join(MODEL_PATH, 'best_model.h5'))
+        live.end()
 
 # In[34]:
 
 
-def SplitDatasetForFolds(train_index, validation_index, fold_nr, numpy_data):
-    print(f"Training fold {fold_nr}...")
+def Preparing_model(data, weight_dict):
+    os.makedirs(MODEL_PATH, exist_ok=True)  # Ensure the model path exists
 
-    # Split the data into train sets for this fold.
-    x_train_fold = numpy_data['x_train'][train_index]
-    y_train_fold = numpy_data['y_train'][train_index]
-    print(f"x train fold shape: {x_train_fold.shape}")
-    print(f"y train fold shape: {y_train_fold.shape}")
-    
-    # Ensure to use only the training set indices
-    x_validation_fold = numpy_data['x_val'][:len(validation_index)] 
-    y_validation_fold = numpy_data['y_val'][:len(validation_index)]
-    print(f"x fold val shape: {x_validation_fold.shape}")
-    print(f"y fold val shape: {y_validation_fold.shape}")
+    try:
+        # Create the model heads
+        model_heads = []
+        input_layers = []
+        for metric in config['model']['metrics']:
+            input_shape = data[f'x_train_{metric}'].shape[1:]  # Get the shape of each x_train metric
+            input_layer = tf.keras.layers.Input(shape=input_shape)
+            input_layers.append(input_layer)
+            print(f"Input shape: {input_layer}")
+            model_head = create_model_head(input_layer)
+            model_heads.append(model_head)
 
-    x_train_fold = x_train_fold.reshape(-1, 32, 2)
-    x_validation_fold = x_validation_fold.reshape(-1, 32, 2)
+        print(f"Model heads created: {model_heads}")
 
-    # Create tf.data.Datasets
-    train_dataset = tf.data.Dataset.from_tensor_slices((x_train_fold, y_train_fold))
-    validation_dataset = tf.data.Dataset.from_tensor_slices((x_validation_fold, y_validation_fold))
-    test_dataset_subject1 = tf.data.Dataset.from_tensor_slices((numpy_data['x_test_1'], numpy_data['y_test_1']))    
-    test_dataset_subject2 = tf.data.Dataset.from_tensor_slices((numpy_data['x_test_2'], numpy_data['y_test_2']))
-    
-    # Shuffling and batching the datasets
-    train_dataset = train_dataset.shuffle(SHUFFLE_BUFFER_SIZE).batch(BATCH_SIZE)
-    validation_dataset = validation_dataset.shuffle(SHUFFLE_BUFFER_SIZE).batch(BATCH_SIZE)
-    test_dataset_subject1 = test_dataset_subject1.batch(BATCH_SIZE)
-    test_dataset_subject2 = test_dataset_subject2.batch(BATCH_SIZE)
+        model = compile_model(input_layers, model_heads)
 
-    return train_dataset, validation_dataset, test_dataset_subject1, test_dataset_subject2
+        train_model(
+            model,
+            [data[f'x_train_{metric}'] for metric in config['model']['metrics']],
+            data['y_train']['labels'],
+            [data[f'x_val_{metric}'] for metric in config['model']['metrics']],
+            data['y_val']['labels'], weight_dict
+        )
+
+
+    except Exception as e:
+        print(f"An error occurred during preparing: {type(e).__name__}: {e}")
 
 
 # In[35]:
 
 
-def save_history_to_json(history, fold_number, best_model):
-    # Create a dictionary for the current fold's metrics
-    metrics = {
-        "fold_number": fold_number,
-        "val_accuracy": history.history['val_accuracy'][-1],
-        "val_loss": history.history['val_loss'][-1],
-        "best_model": best_model
-    }
-
-    # Load existing metrics if the file exists
-    if os.path.exists('metrics.json'):
-        with open('metrics.json', 'r') as f:
-            existing_metrics = json.load(f)
-    else:
-        existing_metrics = []
-
-    # Append the new metrics
-    existing_metrics.append(metrics)
-
-    # Write back the updated metrics to the file
-    with open('metrics.json', 'w') as f:
-        json.dump(existing_metrics, f, indent=4)
+def filter_columns(data, metrics):
+    filtered_data = {}
+    for key, value in data.items():
+        if isinstance(value, dict) and key.startswith('x_'):
+            filtered_data[key] = {k: v for k, v in value.items() if k in metrics}
+        else:
+            filtered_data[key] = value
+    return filtered_data
 
 
 # In[36]:
 
 
-def Train_fold(train_index, val_index, fold_number, numpy_data, weight_dict):
-    exp_mess = f"fold-{fold_number}".lower()
-    print(f"Experiment name: {exp_mess}")
+def prepare_data(datasets):
+    """Reshapes the x data for CNN input."""
+    reshaped_data = {}
     
-    with Live(exp_message=f"Training fold {exp_mess}") as live:
-        # Split data into training and validation sets for this fold
-        train_dataset, validation_dataset, test_dataset_subject1, test_dataset_subject2 = SplitDatasetForFolds(train_index, val_index, fold_number, numpy_data)
-
-       # Create and compile the model
-        model = Compile_model()   
-        # Set up callbacks
-        callbacks = [
-            keras.callbacks.ModelCheckpoint(
-                os.path.join(MODEL_PATH, f"best_model_fold_{fold_number}.keras"),
-                save_best_only=True,
-                monitor="val_accuracy"
-            ),
-            keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001),
-            DVCLiveCallback()
-        ]
-
-        # Log parameters for this fold
-        live.log_param("fold_number", fold_number)
-        live.log_param("epochs", config['model']['epochs'])
-        live.log_param("batch_size", config['model']['batch_size'])
-        live.log_param("learning_rate", config['model']['learning_rate'])
-        live.log_param("folds", config['model']['folds'])
-        live.log_param("kernel_size", config['model']['kernel_size'])
-        live.log_param("activation", config['model']['activation'])
-        live.log_param("input_shape", config['model']['input_shape'])
-        live.log_param("input_features", config['model']['input_features'])
-        live.log_param("shuffle_buffer_size", config['model']['shuffle_buffer_size'])
-        
-        print("Starting training...")
-        
-        # Train the model
-        model.fit(
-            train_dataset,
-            epochs=config['model']['epochs'],
-            validation_data=(validation_dataset),
-            callbacks=callbacks,
-            class_weight=weight_dict
-        )
-
-        # Save the model to the models directory
-        os.makedirs(MODEL_PATH, exist_ok=True)
-        model.save(os.path.join(MODEL_PATH, f'model_{fold_number}.h5'))
-        print(f'Model saved to {MODEL_PATH}/model_{fold_number}.h5')
-
-        print(f"Training fold {fold_number} completed\n")
-
-
-# In[71]:
-
-
-def Cross_validation_training(numpy_data, weight_dict):
-    scores = []
-    os.makedirs(MODEL_PATH, exist_ok=True)  # Ensure the model path exists
-
-    # Initialize KFold with the number of splits
-    print(f'Shape EDA x_train{numpy_data['x_train']['EDA'].shape}')
-
-    kfold = KFold(n_splits=config['model']['folds'], shuffle=True, random_state=42)
-    print(f'Shape EDA x_train{numpy_data['x_train']['EDA'].shape}')
-    try:
-        for metric in config['model']['metrics']:
-            print(f"Processing metric: {metric}")
-            for fold_number, (train_index, val_index) in enumerate(kfold.split(numpy_data['x_train'][metric]), start=1):
-                print(f"Training fold {fold_number} for metric {metric}")
-                score = Train_fold(train_index, val_index, fold_number, numpy_data, weight_dict)
-                scores.append(score)
+    for key in ['x_train', 'x_val', 'x_test_1', 'x_test_2']:
+        for sub_key in datasets[key].keys():
+            # Assuming each sub_key represents a different feature: 'EDA', 'TEMP', 'BVP'
+            reshaped_data[f"{key}_{sub_key}"] = datasets[key][sub_key].reshape((datasets[key][sub_key].shape[0], datasets[key][sub_key].shape[1], 1))
     
-    except Exception as e:
-        print(f"An error occurred during cross-validation training: {e}")
+    # Keep y data as it is
+    for key in ['y_train', 'y_val', 'y_test_1', 'y_test_2']:
+        reshaped_data[key] = datasets[key]
     
-    return scores  
+    return reshaped_data
 
 
-# In[72]:
+# In[37]:
 
 
 def main():
-    df = load_df();
+    df = load_df()
     datasets = load_all_pickles_and_convert_to_numpy_with_columns(DATA_PATH)
+    
+    print(f"Loaded datasets: {datasets.keys()}")
 
     # Calculate weights
     weight_dict = calculate_class_weights(df, 'downsampled_label')
-
-    x_train = datasets['x_train']
-    y_train = datasets['y_train']
-    x_val = datasets['x_val']
-    y_val = datasets['y_val']
-    x_test_1 = datasets['x_test_1']
-    y_test_1 = datasets['y_test_1']
-    x_test_2 = datasets['x_test_2']
-    y_test_2 = datasets['y_test_2']
     
-    # Filter out columns that are not in config['model']['metrics']
-    def filter_metrics(data, metrics):
-        return {key: value for key, value in data.items() if key in metrics}
-
-    # Apply the filter to datasets
-    for key in datasets.keys():
-        datasets[key] = filter_metrics(datasets[key], config['model']['metrics'])
-
+    # Filter columns based on config['model']['metrics']
+    datasets = filter_columns(datasets, config['model']['metrics'])
     for key, value in datasets.items():
-        for sub_key, sub_value in value.items():
-            print(f"{key} - {sub_key}: {sub_value.shape}")
+        if isinstance(value, dict):
+            for sub_key, sub_value in value.items():
+                print(f"{key} - {sub_key}: {sub_value.shape + (1,)}")
+
+    reshaped_data = prepare_data(datasets)
 
     # Train model
-    Cross_validation_training(datasets, weight_dict)
+    x = Preparing_model(reshaped_data, weight_dict)
+    print(f"Model training completed")
 
 
-# In[73]:
+# In[38]:
 
 
-main()
+x = main()
 
 
 # In[ ]:
