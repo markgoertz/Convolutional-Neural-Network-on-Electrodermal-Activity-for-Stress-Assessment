@@ -65,11 +65,12 @@ jobs:
     
     - name: Train and Evaluate
       run: |
-        dvc repro dvc.yaml:training
-        dvc metrics diff --show-md > code/metrics.txt
+        dvc repro dvc.yaml
+        dvc metrics diff --md > metrics.md
+        dvc params diff --md > params.md
 
     - name: Generate Report
       run: |          
         git fetch --prune
-        dvc metrics diff --show-md main > report.md
+        dvc metrics diff --md main > report.md
         cml comment create report.md  

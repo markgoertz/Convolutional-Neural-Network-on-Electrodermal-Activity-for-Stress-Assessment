@@ -1,4 +1,6 @@
 [core]
-    remote = myremote
+    remote = azure-remote
 ['remote "myremote"']
     url = ../data
+['remote "azure-remote"']
+    url = azure://dvcremote
