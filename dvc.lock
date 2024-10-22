@@ -23,7 +23,7 @@ stages:
       params.yaml:
         model.activation: relu
         model.batch_size: 32
-        model.epochs: 4
+        model.epochs: 3
         model.input_features: 1
         model.input_shape: 32
         model.kernel_size: 3
@@ -36,5 +36,5 @@ stages:
     outs:
     - path: models/best_model.h5
       hash: md5
-      md5: e0c72c49ec96e0c03caebf28d192eed8
+      md5: 5be3c84ecb39a17071386879cddc246e
       size: 4236152
