@@ -68,8 +68,8 @@ jobs:
     
     - name: Train and Evaluate
       run: |
-        python notebooks\StressModel.py
-        
+        python notebooks/StressModel.py
+                
         echo "## Stress Model performance" > report.md
         cat dvclive/metrics.json >> report.md
 
