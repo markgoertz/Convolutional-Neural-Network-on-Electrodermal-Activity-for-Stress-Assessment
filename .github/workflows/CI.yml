@@ -63,14 +63,15 @@ jobs:
       run: |
         pip install -r requirements.txt
     
-    # - name: Train and Evaluate
-    #   run: |
-    #     dvc repro
-    #     dvc metrics diff --md > metrics.md
-    #     dvc params diff --md > params.md
+    - name: Train and Evaluate
+      run: |
+        python notebooks/stressModel.py
+        
+        echo "## Stress Model performance" > report.md
+        cat dvclive/metrics.json >> report.md
 
-    # - name: Generate Report
-    #   run: |          
-    #     git fetch --prune
-    #     dvc metrics diff --md main > report.md
-    #     cml comment create report.md  
+    - name: Generate Report
+      run: |          
+        git fetch --prune
+        dvc metrics diff --md main > report.md
+        cml comment create report.md  
