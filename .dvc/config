@@ -1,6 +1,8 @@
 [core]
-    remote = azure-remote
+    remote = smartwearables
 ['remote "myremote"']
     url = ../data
 ['remote "azure-remote"']
-    url = azure://dvcremote
+    url = azure://dvcremote/data
+['remote "smartwearables"']
+    url = azure://dvcremote/data
