@@ -2,39 +2,8 @@ schema: '2.0'
 stages:
   training:
     cmd: python notebooks/stressModel.py
-    deps:
-    - path: data/results/x_train.pkl
-      hash: md5
-      md5: 6715a4e009e55893464e0c802283d2cc
-      size: 42983827
-    - path: data/results/x_val.pkl
-      hash: md5
-      md5: f48b3e9ef9d43f60882a900016671da4
-      size: 18355938
-    - path: data/results/y_train.pkl
-      hash: md5
-      md5: 70531e277a91278595ed225bd938d298
-      size: 47479
-    - path: data/results/y_val.pkl
-      hash: md5
-      md5: 2c27321fdc6cf67cab5759d45c27f57e
-      size: 20655
-    params:
-      params.yaml:
-        model.activation: relu
-        model.batch_size: 32
-        model.epochs: 5
-        model.input_features: 1
-        model.input_shape: 32
-        model.kernel_size: 3
-        model.learning_rate: 0.001
-        model.metrics:
-        - EDA
-        - BVP
-        - TEMP
-        model.shuffle_buffer_size: 1024
     outs:
     - path: models/best_model.h5
       hash: md5
-      md5: c4a91da2b57840bc190410d2b4f4770e
+      md5: 977c0a265d089769f6e01c17c06abf21
       size: 4236152
