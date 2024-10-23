@@ -47,6 +47,9 @@ jobs:
      
     - name: List contents of data directory
       run: ls -l data
+
+    - name: List contents of code directory
+      run: ls -l notebooks
     
     - name: Install DVC
       uses: iterative/setup-dvc@v1
@@ -65,7 +68,7 @@ jobs:
     
     - name: Train and Evaluate
       run: |
-        python notebooks/stressModel.py
+        python notebooks\StressModel.py
         
         echo "## Stress Model performance" > report.md
         cat dvclive/metrics.json >> report.md

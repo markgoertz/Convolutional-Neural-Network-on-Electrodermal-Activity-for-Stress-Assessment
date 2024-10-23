@@ -269,6 +269,7 @@ def train_model(model, x_train, y_train, x_val, y_val, class_weight):
                     DVCLiveCallback(live=live)  # Add DVCLiveCallback to the list
                 ]
             )
+            live.log_params(config)
             live.log_artifact(
                 os.path.join(MODEL_PATH, 'best_model.h5'),
                 type="model",
