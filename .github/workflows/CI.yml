@@ -82,9 +82,13 @@ jobs:
 
         # Add plots section
         echo "## Plots" >> report.md
-        dvc plots show --show-vega master > vega.json
-        vl2png vega.json -s 1.5 > plot.png
-        echo '![](./plot.png "Plots")' >> report.md
-
+        dvc plots show -o plots
+        
         # Create a comment with the report
         cml comment create report.md
+    
+    - name: Archive plots
+      uses: actions/upload-artifact@v4
+      with:
+        name: Runner training/evaluation plots
+        path: plots/index.html
