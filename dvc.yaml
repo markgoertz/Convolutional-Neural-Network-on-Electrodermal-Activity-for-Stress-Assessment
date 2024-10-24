@@ -1,22 +1,17 @@
 stages:
   training:
     cmd: python notebooks/StressModel.py
-    deps:
-    - params.yaml
-    - data/numpy/
-    params:
-    - model.kernel_size
-    - model.epochs
-    - model.batch_size
-    - model.learning_rate
-    - model.folds
-    - model.activation
-    - model.input_shape
-    - model.input_features
-    - model.shuffle_buffer_size
-
+metrics:
+- dvclive/metrics.json
 plots:
 - dvclive/plots/metrics:
     x: step
-params:
-- dvclive/params.yaml
+artifacts:
+  best_model:
+    path: models/best_model.h5
+    type: model
+    desc: This is a convolutional neural network model that is developed to detect
+      stress.
+    labels:
+    - no-stress
+    - stress

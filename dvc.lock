@@ -1,25 +1,9 @@
 schema: '2.0'
 stages:
   training:
-    cmd: python notebooks/StressModel.py
-    deps:
-    - path: data/numpy/
+    cmd: python notebooks/stressModel.py
+    outs:
+    - path: models/best_model.h5
       hash: md5
-      md5: 19f40ab766af6dc395fb815a11bf4c3a.dir
-      size: 2396032
-      nfiles: 8
-    - path: params.yaml
-      hash: md5
-      md5: 7384630a184dd0150d5765268cd6040b
-      size: 183
-    params:
-      params.yaml:
-        model.activation: relu
-        model.batch_size: 32
-        model.epochs: 20
-        model.folds: 3
-        model.input_features: 1
-        model.input_shape: 32
-        model.kernel_size: 3
-        model.learning_rate: 0.001
-        model.shuffle_buffer_size: 1024
+      md5: 977c0a265d089769f6e01c17c06abf21
+      size: 4236152

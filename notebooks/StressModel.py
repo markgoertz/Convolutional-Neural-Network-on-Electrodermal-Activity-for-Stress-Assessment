@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[21]:
+
+
 import keras.callbacks
 from sklearn.model_selection import KFold
 import os
@@ -6,22 +12,28 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import keras
+import keras.losses
 import json
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras import layers, models, regularizers, optimizers, callbacks
 from tensorflow.keras.metrics import BinaryAccuracy, AUC, Precision, Recall, Metric
+from tensorflow.keras.layers import Input, Conv1D, MaxPooling1D, Flatten, Dense, concatenate, Dropout
+from tensorflow.keras.models import Model  # Import Model here
 
-from dvclive import Live  # Ensure DVCLive is imported
+
+import dvc.api
+from dvclive import Live
 from dvclive.keras import DVCLiveCallback  # Import the callback
 import yaml
+import pickle
 
-MAIN_PATH = os.path.dirname(os.getcwd()) + "/Master of Applied IT"
-DATA_PATH = MAIN_PATH + "/data/numpy"
-MODEL_PATH = MAIN_PATH + "/models"
-LOG_PATH = MAIN_PATH + "/logs"
+
+# In[22]:
+DATA_PATH = "data/results"
+MODEL_PATH = "models"
+LOG_PATH = "logs"
 
 BATCH_SIZE = 32
 SHUFFLE_BUFFER_SIZE = 1024
@@ -31,12 +43,17 @@ BEST_VAL_SCORE = 0
 BEST_MODEL = None
 HISTORY = []  # Initialize history_list
 
-def load_config(config_path=MAIN_PATH + "/params.yaml"):
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-    return config
 
-config = load_config()  # This loads the configuration once and allows direct access
+# In[23]:
+
+
+def load_config():
+    return dvc.api.params_show("params.yaml")
+
+config = load_config()
+
+
+# In[24]:
 
 
 def plot_history_metrics(history_dict: dict):
@@ -54,9 +71,17 @@ def plot_history_metrics(history_dict: dict):
         plt.title(str(key))
     plt.show()
 
+
+# In[25]:
+
+
 def load_df():
-    df = pd.read_csv(MAIN_PATH + "/data/result_df.csv")
+    df = pd.read_csv("data/result_df.csv")
     return df
+
+
+# In[26]:
+
 
 def Clean_missing_values(numpy_data):
     numpy_data['x_train'], numpy_data['y_train'] = Remove_missing_values(numpy_data['x_train'], numpy_data['y_train'])
@@ -73,18 +98,45 @@ def Remove_missing_values(x_data, y_data):
     y_clean = y_data[valid_indices]
     return x_clean, y_clean
 
-def gather_numpy_files(data_path):
-    numpy_data = {}
-    
-    for file_name in os.listdir(data_path):
-        if file_name.endswith('.npy'):
-            file_path = os.path.join(data_path, file_name)
-            numpy_data[file_name[:-4]] = np.load(file_path)  # Store in dict
-    
-    # Clean data by removing rows where y_* contains missing values
-    numpy_data = Clean_missing_values(numpy_data)
 
-    return numpy_data
+# In[27]:
+
+
+def load_all_pickles_and_convert_to_numpy_with_columns(directory):
+    try:
+        # Dictionary to store the loaded data as NumPy arrays
+        numpy_data = {}
+        
+        # List all files in the directory
+        for filename in os.listdir(directory):
+            if filename.endswith(".pkl"):  # Only process .pkl files
+                file_path = os.path.join(directory, filename)
+                
+                # Load the data from the .pkl file
+                with open(file_path, 'rb') as file:
+                    data = pickle.load(file)
+                
+                # Store the data in the dictionary, using the file name (without .pkl) as the key
+                dataset_name = filename.replace(".pkl", "")
+                
+                # Print to verify if DataFrame still has columns (for debugging)
+                if isinstance(data, pd.DataFrame):
+                    # Convert the DataFrame into a dictionary of NumPy arrays, one for each column
+                    numpy_data[dataset_name] = {col: np.array(data[col].tolist()) for col in data.columns}
+                else:
+                    # If the dataset is not a DataFrame (like labels), convert directly to NumPy array
+                    numpy_data[dataset_name] = np.array(data)
+                
+                print(f"Loaded {filename} successfully.")
+        
+        return numpy_data
+    
+    except Exception as e:
+        raise RuntimeError(f"Failed to load and convert datasets to NumPy arrays: {e}")
+
+
+# In[28]:
+
 
 def calculate_class_weights(df, label_column):
     vals_dict = {}
@@ -99,33 +151,9 @@ def calculate_class_weights(df, label_column):
     print(f"Weight dict for model: {weight_dict}")
     return weight_dict
 
-def create_model():
-    input_layer = keras.Input(shape=(config["model"]["input_shape"], config["model"]["input_features"]))
-    
-    x = layers.Conv1D(filters=32, kernel_size=config["model"]["kernel_size"], activation=config["model"]["activation"], padding="same", kernel_regularizer=regularizers.l2(0.001))(input_layer)
-    x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling1D(pool_size=2)(x)
-    
-    x = layers.Conv1D(filters=64, kernel_size=3, activation=config["model"]["activation"], padding="same", kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling1D(pool_size=2)(x)
-    
-    x = layers.Conv1D(filters=128, kernel_size=3, activation=config["model"]["activation"], padding="same", kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling1D(pool_size=2)(x)
-    
-    x = layers.Flatten()(x)
-    x = layers.Dense(512, activation="relu", kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.Dropout(0.5)(x)
-    
-    x = layers.Dense(256, activation="relu", kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.Dropout(0.5)(x)
-    
-    output_layer = layers.Dense(1, activation="sigmoid")(x)
-    
-    model = keras.Model(inputs=input_layer, outputs=output_layer)
-    
-    return model
+
+# In[29]:
+
 
 class F1Score(Metric):
     def __init__(self, name='f1_score', **kwargs):
@@ -146,10 +174,61 @@ class F1Score(Metric):
         recall = self.recall.result()
         return 2 * ((precision * recall) / (precision + recall + tf.keras.backend.epsilon()))
 
-def Compile_model():
-    model = create_model()
+
+# In[30]:
+
+
+def create_model_head(input_layer):
+    # First convolutional layer
+    x = tf.keras.layers.Conv1D(filters=32, kernel_size=config["model"]["kernel_size"], 
+                      activation=config["model"]["activation"], padding="same", 
+                      kernel_regularizer=tf.keras.regularizers.l2(0.001))(input_layer)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)
+    
+    # Second convolutional layer
+    x = tf.keras.layers.Conv1D(64, kernel_size=config["model"]["kernel_size"], activation=config["model"]["activation"])(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)   
+    
+    x = tf.keras.layers.Conv1D(filters=128, kernel_size=config["model"]["kernel_size"], 
+                      activation=config["model"]["activation"], padding="same", 
+                      kernel_regularizer=tf.keras.regularizers.l2(0.001))(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)
+    
+    # Flatten the output
+    x = tf.keras.layers.Flatten()(x)
+
+    return x  
+
+
+# In[31]:
+
+
+def build_model(input_layers, model_heads):
+    # Merge models using their outputs directly
+    combined = tf.keras.layers.concatenate(model_heads)
+
+    # Add additional layers after merging
+    x = tf.keras.layers.Dense(128, activation='relu')(combined)
+    x = tf.keras.layers.Dense(64, activation='relu')(x)
+    outputs = tf.keras.layers.Dense(1, activation='sigmoid')(x)  # Adjust based on your task
+
+    # Final model
+    model = keras.Model(inputs=input_layers, outputs=outputs)
+
+    return model
+
+
+# In[32]:
+
+
+def compile_model(input_layers, model_heads):
+    model = build_model(input_layers, model_heads)
     optimizer = keras.optimizers.Adam(amsgrad=True, learning_rate=config["model"]["learning_rate"])
-    loss = keras.losses.BinaryCrossentropy()
+    loss = keras.losses.binary_crossentropy  # Ensure this is a callable, not a result
+
     model.compile(
         optimizer=optimizer,
         loss=loss,
@@ -159,163 +238,148 @@ def Compile_model():
             keras.metrics.Precision(name='precision'),
             keras.metrics.Recall(name='recall'),
             F1Score(name='f1_score')
-        ],
+        ]
     )
+    model.summary()
     return model
 
-def SplitDatasetForFolds(train_index, validation_index, fold_nr, numpy_data):
-    print(f"Training fold {fold_nr}...")
 
-    # Split the data into train sets for this fold.
-    x_train_fold = numpy_data['x_train'][train_index]
-    y_train_fold = numpy_data['y_train'][train_index]
-
-    print(f"x_val shape: {numpy_data['x_val'].shape}")
-    print(f"y_val shape: {numpy_data['y_val'].shape}")
-    
-    # Ensure to use only the training set indices
-    x_validation_fold = numpy_data['x_val'][:len(validation_index)]  # Taking the first `len(validation_index)` samples
-    y_validation_fold = numpy_data['y_val'][:len(validation_index)]
-
-    # Create tf.data.Datasets
-    train_dataset = tf.data.Dataset.from_tensor_slices((x_train_fold, y_train_fold))
-    validation_dataset = tf.data.Dataset.from_tensor_slices((x_validation_fold, y_validation_fold))
-    test_dataset_subject1 = tf.data.Dataset.from_tensor_slices((numpy_data['x_test_1'], numpy_data['y_test_1']))	
-    test_dataset_subject2 = tf.data.Dataset.from_tensor_slices((numpy_data['x_test_2'], numpy_data['y_test_2']))
-    
-    # Shuffling and batching the datasets
-    train_dataset = train_dataset.shuffle(SHUFFLE_BUFFER_SIZE).batch(BATCH_SIZE)
-    validation_dataset = validation_dataset.shuffle(SHUFFLE_BUFFER_SIZE).batch(BATCH_SIZE)
-    test_dataset_subject1 = test_dataset_subject1.batch(BATCH_SIZE)
-    test_dataset_subject2 = test_dataset_subject2.batch(BATCH_SIZE)
-
-    return train_dataset, validation_dataset, test_dataset_subject1, test_dataset_subject2
-
-def convert_to_native(data):
-    """Recursively convert numpy types to native python types."""
-    if isinstance(data, dict):
-        return {key: convert_to_native(value) for key, value in data.items()}
-    elif isinstance(data, list):
-        return [convert_to_native(item) for item in data]
-    elif isinstance(data, np.ndarray):
-        return data.tolist()  # Convert numpy array to list
-    elif isinstance(data, (np.float32, np.float64)):
-        return data.item()  # Convert single value numpy float to Python float
-    else:
-        return data  
-
-def save_history_to_json(history, fold_number, best_model):
-    # Create a dictionary for the current fold's metrics
-    metrics = {
-        "fold_number": fold_number,
-        "val_accuracy": history.history['val_accuracy'][-1],
-        "val_loss": history.history['val_loss'][-1],
-        "best_model": best_model
-    }
-
-    # Load existing metrics if the file exists
-    if os.path.exists('metrics.json'):
-        with open('metrics.json', 'r') as f:
-            existing_metrics = json.load(f)
-    else:
-        existing_metrics = []
-
-    # Append the new metrics
-    existing_metrics.append(metrics)
-
-    # Write back the updated metrics to the file
-    with open('metrics.json', 'w') as f:
-        json.dump(existing_metrics, f, indent=4)
-
-def Train_fold(train_index, val_index, fold_number, numpy_data, weight_dict):
-    exp_mess = f"fold-{fold_number}".lower()
-    print(f"Experiment name: {exp_mess}")
-    
-    with Live(exp_message=f"Training fold {exp_mess}") as live:
-        # Split data into training and validation sets for this fold
-        train_dataset, validation_dataset, test_dataset_subject1, test_dataset_subject2 = SplitDatasetForFolds(train_index, val_index, fold_number, numpy_data)
-
-        # Create and compile the model
-        model = Compile_model()    
-            # Set up callbacks
-        callbacks = [
-            keras.callbacks.ModelCheckpoint(
-                os.path.join(MODEL_PATH, f"best_model_fold_{fold_number}.keras"),
-                save_best_only=True,
-                monitor="val_accuracy"
-            ),
-            keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001),
-            DVCLiveCallback()
-            # Add any other callbacks you need here
-        ]
-
-        # Log parameters for this fold
-        live.log_param("fold_number", fold_number)
-        live.log_param("epochs", config['model']['epochs'])
-        live.log_param("batch_size", config['model']['batch_size'])
-        live.log_param("learning_rate", config['model']['learning_rate'])
-        live.log_param("folds", config['model']['folds'])
-        live.log_param("kernel_size", config['model']['kernel_size'])
-        live.log_param("activation", config['model']['activation'])
-        live.log_param("input_shape", config['model']['input_shape'])
-        live.log_param("input_features", config['model']['input_features'])
-        live.log_param("shuffle_buffer_size", config['model']['shuffle_buffer_size'])
-        
-        print("Starting training...")
-        
-        # Train the model
-        model.fit(
-            train_dataset,
-            epochs=config['model']['epochs'],
-            validation_data=(validation_dataset),
-            callbacks=callbacks,
-            class_weight=weight_dict
-        )
-
-        # Save the model to the models directory
-        os.makedirs(MODEL_PATH, exist_ok=True)
-        model.save(os.path.join(MODEL_PATH, f'model_{fold_number}.h5'))
-        print(f'Model saved to {MODEL_PATH}/model_{fold_number}.h5')
-
-        print(f"Training fold {fold_number} completed\n")
+# In[33]:
 
 
-def Cross_validation_training(numpy_data, weight_dict):
-    scores = []
+def train_model(model, x_train, y_train, x_val, y_val, class_weight):
+    """Trains the model on the training data."""
+
+    with Live() as live:
+        for epoch in range(config['model']['epochs']):
+            model.fit(
+                x_train,
+                y_train,
+                validation_data=(x_val, y_val),
+                epochs=1,  # Train for one epoch at a time
+                class_weight=class_weight,
+                callbacks=[
+                    keras.callbacks.ModelCheckpoint(
+                        filepath=os.path.join(MODEL_PATH, 'best_model.keras'),  # Add filepath argument
+                        save_best_only=True,
+                        monitor="val_binary_accuracy"
+                    ),
+                    keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001),
+                    DVCLiveCallback(live=live)  # Add DVCLiveCallback to the list
+                ]
+            )
+            live.log_params(config)
+            live.log_artifact(
+                os.path.join(MODEL_PATH, 'best_model.h5'),
+                type="model",
+                desc="This is a convolutional neural network model that is developed to detect stress.",
+                labels=["no-stress", "stress"],
+            )
+
+        model.save(os.path.join(MODEL_PATH, 'best_model.h5'))
+        live.end()
+
+# In[34]:
+
+
+def Preparing_model(data, weight_dict):
     os.makedirs(MODEL_PATH, exist_ok=True)  # Ensure the model path exists
 
-    # Initialize KFold with the number of splits
-    kfold = KFold(n_splits=config['model']['folds'], shuffle=True, random_state=42)
-
     try:
-        for fold_number, (train_index, val_index) in enumerate(kfold.split(numpy_data['x_train']), start=1):
-            print(f"Training fold {fold_number}")
+        # Create the model heads
+        model_heads = []
+        input_layers = []
+        for metric in config['model']['metrics']:
+            input_shape = data[f'x_train_{metric}'].shape[1:]  # Get the shape of each x_train metric
+            input_layer = tf.keras.layers.Input(shape=input_shape)
+            input_layers.append(input_layer)
+            print(f"Input shape: {input_layer}")
+            model_head = create_model_head(input_layer)
+            model_heads.append(model_head)
 
-            score = Train_fold(train_index, val_index, fold_number, numpy_data, weight_dict)
-            scores.append(score)
-          
+        print(f"Model heads created: {model_heads}")
+
+        model = compile_model(input_layers, model_heads)
+
+        train_model(
+            model,
+            [data[f'x_train_{metric}'] for metric in config['model']['metrics']],
+            data['y_train']['labels'],
+            [data[f'x_val_{metric}'] for metric in config['model']['metrics']],
+            data['y_val']['labels'], weight_dict
+        )
+
+
     except Exception as e:
-        print(f"An error occurred during cross-validation training: {e}")
-    
-    return scores  
+        print(f"An error occurred during preparing: {type(e).__name__}: {e}")
 
+
+# In[35]:
+
+
+def filter_columns(data, metrics):
+    filtered_data = {}
+    for key, value in data.items():
+        if isinstance(value, dict) and key.startswith('x_'):
+            filtered_data[key] = {k: v for k, v in value.items() if k in metrics}
+        else:
+            filtered_data[key] = value
+    return filtered_data
+
+
+# In[36]:
+
+
+def prepare_data(datasets):
+    """Reshapes the x data for CNN input."""
+    reshaped_data = {}
+    
+    for key in ['x_train', 'x_val', 'x_test_1', 'x_test_2']:
+        for sub_key in datasets[key].keys():
+            # Assuming each sub_key represents a different feature: 'EDA', 'TEMP', 'BVP'
+            reshaped_data[f"{key}_{sub_key}"] = datasets[key][sub_key].reshape((datasets[key][sub_key].shape[0], datasets[key][sub_key].shape[1], 1))
+    
+    # Keep y data as it is
+    for key in ['y_train', 'y_val', 'y_test_1', 'y_test_2']:
+        reshaped_data[key] = datasets[key]
+    
+    return reshaped_data
+
+
+# In[37]:
 
 
 def main():
-    df = load_df();
-    numpy_data = gather_numpy_files(DATA_PATH)
+    df = load_df()
+    datasets = load_all_pickles_and_convert_to_numpy_with_columns(DATA_PATH)
+    
+    print(f"Loaded datasets: {datasets.keys()}")
 
     # Calculate weights
     weight_dict = calculate_class_weights(df, 'downsampled_label')
+    
+    # Filter columns based on config['model']['metrics']
+    datasets = filter_columns(datasets, config['model']['metrics'])
+    for key, value in datasets.items():
+        if isinstance(value, dict):
+            for sub_key, sub_value in value.items():
+                print(f"{key} - {sub_key}: {sub_value.shape + (1,)}")
 
-    # Create model
-    convolutional_model = create_model()
-    convolutional_model.summary()
+    reshaped_data = prepare_data(datasets)
 
     # Train model
-    Cross_validation_training(numpy_data, weight_dict)
-    
-    return numpy_data;
+    x = Preparing_model(reshaped_data, weight_dict)
+    print(f"Model training completed")
 
-numpy = main()
+
+# In[38]:
+
+
+x = main()
+
+
+# In[ ]:
+
+
+
 
