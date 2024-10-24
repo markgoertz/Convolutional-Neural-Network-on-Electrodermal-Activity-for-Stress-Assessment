@@ -87,7 +87,7 @@ jobs:
           --template dvclive/plots/metrics/train/binary_accuracy.tsv \
           --show-vega master > vega.json
         vl2png vega.json -s 1.5 > plot.png
-        echo '![](./plot.png "Train Binary Accuracy"")' >> report.md
+        echo '![](./plot.png "Train Binary Accuracy")' >> report.md
 
         # Create a comment with the report
         cml comment create report.md
