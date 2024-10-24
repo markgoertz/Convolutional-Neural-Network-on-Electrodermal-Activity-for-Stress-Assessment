@@ -1,8 +1,6 @@
 stages:
   training:
     cmd: python notebooks/StressModel.py
-    outs:
-    - models/best_model.h5
 metrics:
 - dvclive/metrics.json
 plots:
