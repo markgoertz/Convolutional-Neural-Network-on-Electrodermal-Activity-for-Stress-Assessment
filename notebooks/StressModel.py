@@ -260,7 +260,7 @@ def train_model(model, x_train, y_train, x_val, y_val, class_weight):
                 class_weight=class_weight,
                 callbacks=[
                     keras.callbacks.ModelCheckpoint(
-                        filepath=os.path.join(MODEL_PATH, 'best_model.h5'),  # Add filepath argument
+                        filepath=os.path.join(MODEL_PATH, 'best_model.keras'),  # Add filepath argument
                         save_best_only=True,
                         monitor="val_binary_accuracy"
                     ),
