@@ -74,9 +74,8 @@ jobs:
         REPO_TOKEN: ${{ secrets.MY_GITHUB_PAT }}
       run: |         
         echo "## Metrics: workflow vs. main" >> report.md
-        git fetch --depth=1 origin main:main
 
-        dvc metrics diff --md main >> report.md
+        dvc metrics show --md >> report.md
 
         dvc params diff --md >> report.md
         cml comment create report.md  
