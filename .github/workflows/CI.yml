@@ -66,7 +66,7 @@ jobs:
         AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
       run: |
         pip install -r requirements.txt  # Install dependencies
-        dvc pull data --run-cache        # Pull data & run-cache from Azure Blob Storage
+        dvc pull data/results --run-cache        # Pull data & run-cache from Azure Blob Storage
         dvc repro                        # Reproduce pipeline                    
 
     - name: Create CML Report
