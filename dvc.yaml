@@ -1,6 +1,6 @@
 stages:
   training:
-    cmd: python notebooks/stressModel.py
+    cmd: python notebooks/StressModel.py
     outs:
     - models/best_model.h5
 metrics:
