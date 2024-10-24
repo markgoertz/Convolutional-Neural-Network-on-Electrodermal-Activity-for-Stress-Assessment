@@ -31,7 +31,7 @@ import pickle
 
 
 # In[22]:
-MAIN_PATH = 'C:/Master of Applied IT/'
+MAIN_PATH = os.path.dirname(os.getcwd())
 DATA_PATH = MAIN_PATH + "/data/results"
 MODEL_PATH = MAIN_PATH + "/models"
 LOG_PATH = MAIN_PATH + "/logs"
