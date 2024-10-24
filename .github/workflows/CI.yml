@@ -68,15 +68,12 @@ jobs:
     
     - name: Train model
       env:
-        AZURE_STORAGE_ACCOUNT_NAME: ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
-        AZURE_STORAGE_ACCOUNT_KEY: ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}
+        AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
+        AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}
       run: |
-        pip install -r requirements.txt 
-        dvc remote modify --local myremote account_name $AZURE_STORAGE_ACCOUNT_NAME
-        dvc remote modify --local myremote account_key $AZURE_STORAGE_ACCOUNT_KEY
         dvc pull data --run-cache        
         dvc repro                        
-        dvc repro
+
 
         echo "## Stress Model performance" > report.md
         cat dvclive/metrics.json >> report.md
