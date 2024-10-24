@@ -62,12 +62,12 @@ jobs:
     
     - name: Train model
       env:
-        AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
-        AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}
+        AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
+        AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
       run: |
         pip install -r requirements.txt  # Install dependencies
         dvc remote modify --local myremote account_name $AZURE_STORAGE_ACCOUNT_NAME
-        dvc remote modify --local myremote account_key $AZURE_STORAGE_ACCOUNT_KEY
+        dvc remote modify --local myremote account_key $AZURE_STORAGE_CONNECTION_STRING
         dvc pull data --run-cache        # Pull data & run-cache from Azure Blob Storage
         dvc repro                        # Reproduce pipeline                    
 
