@@ -31,10 +31,9 @@ import pickle
 
 
 # In[22]:
-MAIN_PATH = os.path.dirname(os.getcwd())
-DATA_PATH = MAIN_PATH + "/data/results"
-MODEL_PATH = MAIN_PATH + "/models"
-LOG_PATH = MAIN_PATH + "/logs"
+DATA_PATH = "data/results"
+MODEL_PATH = "models"
+LOG_PATH = "logs"
 
 BATCH_SIZE = 32
 SHUFFLE_BUFFER_SIZE = 1024
