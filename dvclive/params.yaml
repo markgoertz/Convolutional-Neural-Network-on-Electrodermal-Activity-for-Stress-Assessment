@@ -1,10 +1,13 @@
-fold_number: 3
-epochs: 20
-batch_size: 32
-learning_rate: 0.001
-folds: 5
-kernel_size: 3
-activation: relu
-input_shape: 32
-input_features: 1
-shuffle_buffer_size: 1024
+model:
+  learning_rate: 0.001
+  epochs: 8
+  batch_size: 32
+  input_shape: 32
+  input_features: 1
+  activation: relu
+  metrics:
+  - EDA
+  - BVP
+  - TEMP
+  kernel_size: 3
+  shuffle_buffer_size: 1024
