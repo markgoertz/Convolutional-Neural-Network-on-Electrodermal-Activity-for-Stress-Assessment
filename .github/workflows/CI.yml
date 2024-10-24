@@ -83,7 +83,7 @@ jobs:
         echo "## Plots" >> report.md
         echo "### Train Binary Accuracy" >> report.md
 
-        dvc plots show \
+        dvc plots diff \
           --template dvclive/plots/metrics/train/binary_accuracy.tsv \
           --show-vega master > vega.json
         vl2png vega.json -s 1.5 > plot.png
