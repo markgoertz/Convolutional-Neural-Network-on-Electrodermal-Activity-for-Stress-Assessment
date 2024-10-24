@@ -76,6 +76,7 @@ jobs:
         echo "## Metrics: workflow vs. main" >> report.md
 
         dvc metrics show --md >> report.md
-
         dvc params diff --md >> report.md
+
+        dvc plots show >> report.md
         cml comment create report.md  
