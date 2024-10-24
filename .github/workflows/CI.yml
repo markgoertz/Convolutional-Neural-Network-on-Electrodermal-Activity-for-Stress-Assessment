@@ -38,12 +38,21 @@ jobs:
           jupyter: true
 
   DVC-CML-Pipeline:
-    runs-on: [ubuntu-latest]
-    env:
-      REPO_TOKEN: ${{ secrets.TOKEN }}
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install DVC
+      uses: iterative/setup-dvc@v1
+      
+    - name: Install CML
+      uses: iterative/setup-cml@v2
      
     - name: List contents of data directory
       run: ls -l data
@@ -51,35 +60,21 @@ jobs:
     - name: List contents of code directory
       run: ls -l notebooks
     
-    - name: Install DVC
-      uses: iterative/setup-dvc@v1
-    
-    - name: Install CML
-      uses: iterative/setup-cml@v2
-      
-    - name: Set-up python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-    
     - name: Train model
       env:
         AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
         AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}
       run: |
+        pip install -r requirements.txt
         dvc pull data --run-cache        
         dvc repro                        
 
+    - name: Create CML Report
+      env:
+        REPO_TOKEN: ${{ secrets.TOKEN }}
+      run: |         
+        echo "## Metrics: workflow vs. main" >> report.md
+        git fetch --depth=1 origin main:main 
 
-        echo "## Stress Model performance" > report.md
-        cat dvclive/metrics.json >> report.md
-
-    - name: Generate Report
-      run: |          
-        git fetch --prune
         dvc metrics diff --md main > report.md
         cml comment create report.md  
