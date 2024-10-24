@@ -73,10 +73,17 @@ jobs:
       env:
         REPO_TOKEN: ${{ secrets.MY_GITHUB_PAT }}
       run: |         
-        echo "## Metrics: workflow vs. main" >> report.md
+        echo "## Metrics: workflow
 
         dvc metrics show --md >> report.md
         dvc params diff --md >> report.md
 
-        dvc plots show >> report.md
+        echo "## Plots" >> report.md
+        dvc plots show \
+          --show-vega master > vega.json
+        vl2png vega.json -s 1.5 > plot.png
+        echo '![](./plot.png "Metrics")' >> report.md
+        
+        
+
         cml comment create report.md  
