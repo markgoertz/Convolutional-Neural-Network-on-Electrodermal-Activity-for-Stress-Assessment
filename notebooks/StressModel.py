@@ -77,7 +77,7 @@ def plot_history_metrics(history_dict: dict):
 
 
 def load_df():
-    df = pd.read_csv(MAIN_PATH + "/data/result_df.csv")
+    df = pd.read_csv("/data/result_df.csv")
     return df
 
 
