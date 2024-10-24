@@ -71,7 +71,7 @@ jobs:
 
     - name: Create CML Report
       env:
-        REPO_TOKEN: ${{ secrets.TOKEN }}
+        REPO_TOKEN: ${{ secrets.MY_GITHUB_PAT }}
       run: |         
         echo "## Metrics: workflow vs. main" >> report.md
         git fetch --depth=1 origin main:main
