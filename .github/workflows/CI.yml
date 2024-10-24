@@ -81,14 +81,11 @@ jobs:
 
         # Add plots section
         echo "## Plots" >> report.md
-        echo "### Train Binary Accuracy" >> report.md
-
-        dvc plots diff \
-          --template dvclive/plots/metrics/train/binary_accuracy.tsv \
-          --show-vega master > vega.json
-        vl2png vega.json -s 1.5 > plot.png
-        echo '![](./plot.png "Train Binary Accuracy")' >> report.md
-
+        echo "### Dataset distribution" >> report.md
+        echo '![](images/preprocessing/dataset_distribution.png "Train, Validation, Test split")' >> report.md
+        echo '![](images/preprocessing/SMOTE.png "Samples Distribution")' >> report.md
+        
+        dvc plots show -o plots
         # Create a comment with the report
         cml comment create report.md
     
