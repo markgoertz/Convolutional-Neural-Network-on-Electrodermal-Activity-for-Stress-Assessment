@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[21]:
-
-
+# %%
 import keras.callbacks
 from sklearn.model_selection import KFold
 import os
@@ -29,8 +24,8 @@ from dvclive.keras import DVCLiveCallback  # Import the callback
 import yaml
 import pickle
 
+# %%
 
-# In[22]:
 DATA_PATH = "data/results"
 MODEL_PATH = "models"
 LOG_PATH = "logs"
@@ -43,19 +38,13 @@ BEST_VAL_SCORE = 0
 BEST_MODEL = None
 HISTORY = []  # Initialize history_list
 
-
-# In[23]:
-
-
+# %%
 def load_config():
     return dvc.api.params_show("params.yaml")
 
 config = load_config()
 
-
-# In[24]:
-
-
+# %%
 def plot_history_metrics(history_dict: dict):
     total_plots = len(history_dict)
     cols = total_plots // 2
@@ -71,18 +60,12 @@ def plot_history_metrics(history_dict: dict):
         plt.title(str(key))
     plt.show()
 
-
-# In[25]:
-
-
+# %%
 def load_df():
     df = pd.read_csv("data/result_df.csv")
     return df
 
-
-# In[26]:
-
-
+# %%
 def Clean_missing_values(numpy_data):
     numpy_data['x_train'], numpy_data['y_train'] = Remove_missing_values(numpy_data['x_train'], numpy_data['y_train'])
     numpy_data['x_val'], numpy_data['y_val'] = Remove_missing_values(numpy_data['x_val'], numpy_data['y_val'])
@@ -99,45 +82,24 @@ def Remove_missing_values(x_data, y_data):
     return x_clean, y_clean
 
 
-# In[27]:
+# %%
+def load_data_from_pickle(directory):
+    """
+    Load all data from pickle files in the specified directory.
 
-
-def load_all_pickles_and_convert_to_numpy_with_columns(directory):
-    try:
-        # Dictionary to store the loaded data as NumPy arrays
-        numpy_data = {}
-        
-        # List all files in the directory
-        for filename in os.listdir(directory):
-            if filename.endswith(".pkl"):  # Only process .pkl files
-                file_path = os.path.join(directory, filename)
-                
-                # Load the data from the .pkl file
-                with open(file_path, 'rb') as file:
-                    data = pickle.load(file)
-                
-                # Store the data in the dictionary, using the file name (without .pkl) as the key
-                dataset_name = filename.replace(".pkl", "")
-                
-                # Print to verify if DataFrame still has columns (for debugging)
-                if isinstance(data, pd.DataFrame):
-                    # Convert the DataFrame into a dictionary of NumPy arrays, one for each column
-                    numpy_data[dataset_name] = {col: np.array(data[col].tolist()) for col in data.columns}
-                else:
-                    # If the dataset is not a DataFrame (like labels), convert directly to NumPy array
-                    numpy_data[dataset_name] = np.array(data)
-                
-                print(f"Loaded {filename} successfully.")
-        
-        return numpy_data
+    Returns:
+        tuple: Loaded training and test data as dictionaries.
+    """
     
-    except Exception as e:
-        raise RuntimeError(f"Failed to load and convert datasets to NumPy arrays: {e}")
+    data = {}
+    for filename in os.listdir(directory):
+        if filename.endswith('.pkl'):
+            key = filename.split('.')[0]  # Use the filename without extension as key
+            data[key] = pd.read_pickle(os.path.join(directory, filename))
 
+    return data
 
-# In[28]:
-
-
+# %%
 def calculate_class_weights(df, label_column):
     vals_dict = {}
     for i in df[label_column]:
@@ -151,9 +113,7 @@ def calculate_class_weights(df, label_column):
     print(f"Weight dict for model: {weight_dict}")
     return weight_dict
 
-
-# In[29]:
-
+# %%
 
 class F1Score(Metric):
     def __init__(self, name='f1_score', **kwargs):
@@ -175,9 +135,7 @@ class F1Score(Metric):
         return 2 * ((precision * recall) / (precision + recall + tf.keras.backend.epsilon()))
 
 
-# In[30]:
-
-
+# %%
 def create_model_head(input_layer):
     # First convolutional layer
     x = tf.keras.layers.Conv1D(filters=32, kernel_size=config["model"]["kernel_size"], 
@@ -202,10 +160,7 @@ def create_model_head(input_layer):
 
     return x  
 
-
-# In[31]:
-
-
+# %%
 def build_model(input_layers, model_heads):
     # Merge models using their outputs directly
     combined = tf.keras.layers.concatenate(model_heads)
@@ -220,10 +175,7 @@ def build_model(input_layers, model_heads):
 
     return model
 
-
-# In[32]:
-
-
+# %%
 def compile_model(input_layers, model_heads):
     model = build_model(input_layers, model_heads)
     optimizer = keras.optimizers.Adam(amsgrad=True, learning_rate=config["model"]["learning_rate"])
@@ -243,10 +195,7 @@ def compile_model(input_layers, model_heads):
     model.summary()
     return model
 
-
-# In[33]:
-
-
+# %%
 def train_model(model, x_train, y_train, x_val, y_val, class_weight):
     """Trains the model on the training data."""
 
@@ -279,21 +228,47 @@ def train_model(model, x_train, y_train, x_val, y_val, class_weight):
         model.save(os.path.join(MODEL_PATH, 'best_model.h5'))
         live.end()
 
-# In[34]:
+# %%
+def save_history_to_json(history, fold_number, best_model):
+    # Create a dictionary for the current fold's metrics
+    metrics = {
+        "fold_number": fold_number,
+        "val_accuracy": history.history['val_accuracy'][-1],
+        "val_loss": history.history['val_loss'][-1],
+        "best_model": best_model
+    }
+
+    # Load existing metrics if the file exists
+    if os.path.exists('metrics.json'):
+        with open('metrics.json', 'r') as f:
+            existing_metrics = json.load(f)
+    else:
+        existing_metrics = []
+
+    # Append the new metrics
+    existing_metrics.append(metrics)
+
+    # Write back the updated metrics to the file
+    with open('metrics.json', 'w') as f:
+        json.dump(existing_metrics, f, indent=4)
 
 
-def Preparing_model(data, weight_dict):
+# %%
+def Preparing_model(x_train, y_train, x_test, y_test, weight_dict):
     os.makedirs(MODEL_PATH, exist_ok=True)  # Ensure the model path exists
 
     try:
         # Create the model heads
         model_heads = []
         input_layers = []
+        
         for metric in config['model']['metrics']:
-            input_shape = data[f'x_train_{metric}'].shape[1:]  # Get the shape of each x_train metric
-            input_layer = tf.keras.layers.Input(shape=input_shape)
+            input_shape = (config['model']['input_shapes'][metric], config['model']['input_features'])
+            input_layer = tf.keras.layers.Input(shape=input_shape, name=f'input_{metric.lower()}')
             input_layers.append(input_layer)
-            print(f"Input shape: {input_layer}")
+            print(f"Input shape for {metric}: {input_shape}")
+            
+            # Create a model head for each input
             model_head = create_model_head(input_layer)
             model_heads.append(model_head)
 
@@ -303,20 +278,17 @@ def Preparing_model(data, weight_dict):
 
         train_model(
             model,
-            [data[f'x_train_{metric}'] for metric in config['model']['metrics']],
-            data['y_train']['labels'],
-            [data[f'x_val_{metric}'] for metric in config['model']['metrics']],
-            data['y_val']['labels'], weight_dict
+            [x_train[metric] for metric in config['model']['metrics']],
+            y_train,
+            [x_test[metric] for metric in config['model']['metrics']],
+            y_test,
+            weight_dict
         )
-
-
     except Exception as e:
         print(f"An error occurred during preparing: {type(e).__name__}: {e}")
 
 
-# In[35]:
-
-
+# %%
 def filter_columns(data, metrics):
     filtered_data = {}
     for key, value in data.items():
@@ -326,60 +298,43 @@ def filter_columns(data, metrics):
             filtered_data[key] = value
     return filtered_data
 
-
-# In[36]:
-
-
-def prepare_data(datasets):
-    """Reshapes the x data for CNN input."""
-    reshaped_data = {}
-    
-    for key in ['x_train', 'x_val', 'x_test_1', 'x_test_2']:
-        for sub_key in datasets[key].keys():
-            # Assuming each sub_key represents a different feature: 'EDA', 'TEMP', 'BVP'
-            reshaped_data[f"{key}_{sub_key}"] = datasets[key][sub_key].reshape((datasets[key][sub_key].shape[0], datasets[key][sub_key].shape[1], 1))
-    
-    # Keep y data as it is
-    for key in ['y_train', 'y_val', 'y_test_1', 'y_test_2']:
-        reshaped_data[key] = datasets[key]
-    
-    return reshaped_data
-
-
-# In[37]:
-
+# %%
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 def main():
     df = load_df()
-    datasets = load_all_pickles_and_convert_to_numpy_with_columns(DATA_PATH)
-    
-    print(f"Loaded datasets: {datasets.keys()}")
+    datasets = load_data_from_pickle(DATA_PATH)
+ 
+    # Extract the datasets
+    x_train = datasets['x_train']
+    y_train = datasets['y_train']
+
+    x_val = datasets['x_val']
+    y_val = datasets['y_val']
 
     # Calculate weights
     weight_dict = calculate_class_weights(df, 'downsampled_label')
-    
+
     # Filter columns based on config['model']['metrics']
     datasets = filter_columns(datasets, config['model']['metrics'])
+
     for key, value in datasets.items():
         if isinstance(value, dict):
             for sub_key, sub_value in value.items():
-                print(f"{key} - {sub_key}: {sub_value.shape + (1,)}")
-
-    reshaped_data = prepare_data(datasets)
+                print(f"Shape of {key}_{sub_key}: {sub_value.shape}")
+        else:
+            print(f"Shape of {key}: {value.shape}")
 
     # Train model
-    x = Preparing_model(reshaped_data, weight_dict)
+    x = Preparing_model(x_train, y_train, x_val, y_val, weight_dict)
     print(f"Model training completed")
 
+    return y_val
 
-# In[38]:
 
 
+# %%
 x = main()
-
-
-# In[ ]:
-
-
+x
 
 
