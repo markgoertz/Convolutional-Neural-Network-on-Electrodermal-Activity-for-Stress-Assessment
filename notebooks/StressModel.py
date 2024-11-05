@@ -199,7 +199,7 @@ def compile_model(input_layers, model_heads):
 def train_model(model, x_train, y_train, x_val, y_val, class_weight):
     """Trains the model on the training data."""
 
-    with Live() as live:
+    with Live(exp_message=f'Training metrics: {config["model"]["metrics"]}') as live:
         for epoch in range(config['model']['epochs']):
             model.fit(
                 x_train,

@@ -1,0 +1,5 @@
+outs:
+- md5: d101ae823886487bb2cbf4936c08271d
+  size: 8862936
+  hash: md5
+  path: best_model.h5
