@@ -3,13 +3,14 @@ model:
   epochs: 30
   batch_size: 32
   activation: relu
-  metrics: ['BVP']
+  metrics: ['EDA', 'TEMP', 'BVP', 'ACC']
   kernel_size: 3
   shuffle_buffer_size: 1024
   
   # Input shapes for each metric
   input_shapes:
-    # EDA: 32    # For EDA, 4Hz over 8 seconds
+    EDA: 32    # For EDA, 4Hz over 8 seconds
     BVP: 256   # For BVP, 32Hz over 8 seconds
-    # TEMP: 32   # For TEMP, 4Hz over 8 seconds
+    TEMP: 32   # For TEMP, 4Hz over 8 seconds
+    ACC: 256   # For BVP, 32Hz over 8 seconds
   input_features: 1
