@@ -5,7 +5,6 @@ model:
   activation: relu
   metrics:
   - EDA
-  - TEMP
   - BVP
   - ACC
   kernel_size: 3
@@ -13,6 +12,5 @@ model:
   input_shapes:
     EDA: 32
     BVP: 256
-    TEMP: 32
     ACC: 256
   input_features: 1
