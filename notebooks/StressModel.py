@@ -200,33 +200,32 @@ def train_model(model, x_train, y_train, x_val, y_val, class_weight):
     """Trains the model on the training data."""
 
     with Live(exp_message=f'Training metrics: {config["model"]["metrics"]}') as live:
-        for epoch in range(config['model']['epochs']):
-            model.fit(
-                x_train,
-                y_train,
-                validation_data=(x_val, y_val),
-                epochs=1,  # Train for one epoch at a time
-                class_weight=class_weight,
-                callbacks=[
-                    keras.callbacks.ModelCheckpoint(
-                        filepath=os.path.join(MODEL_PATH, 'best_model.keras'),  # Add filepath argument
-                        save_best_only=True,
-                        monitor="val_binary_accuracy"
-                    ),
-                    keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001),
-                    DVCLiveCallback(live=live)  # Add DVCLiveCallback to the list
-                ]
-            )
-            live.log_params(config)
-            live.log_artifact(
-                os.path.join(MODEL_PATH, 'best_model.h5'),
-                type="model",
-                desc="This is a convolutional neural network model that is developed to detect stress.",
-                labels=["no-stress", "stress"],
-            )
+        model.fit(
+            x_train,
+            y_train,
+            validation_data=(x_val, y_val),
+            epochs=config['model']['epochs'],  # Train for one epoch at a time
+            class_weight=class_weight,
+            callbacks=[
+                keras.callbacks.ModelCheckpoint(
+                    filepath=os.path.join(MODEL_PATH, 'best_model.keras'),  # Add filepath argument
+                    save_best_only=True,
+                    monitor="val_binary_accuracy"
+                ),
+                keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001),
+                DVCLiveCallback(live=live)  # Add DVCLiveCallback to the list
+            ]
+        )
+        live.log_params(config)
+        live.log_artifact(
+            os.path.join(MODEL_PATH, 'best_model.h5'),
+            type="model",
+            desc="This is a convolutional neural network model that is developed to detect stress.",
+            labels=["no-stress", "stress"],
+        )
 
         model.save(os.path.join(MODEL_PATH, 'best_model.h5'))
-        live.end()
+    live.end()
 
 # %%
 def save_history_to_json(history, fold_number, best_model):

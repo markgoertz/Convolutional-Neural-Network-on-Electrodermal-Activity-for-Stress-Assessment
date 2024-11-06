@@ -15,5 +15,3 @@ artifacts:
     labels:
     - no-stress
     - stress
-params:
-- dvclive/params.yaml
