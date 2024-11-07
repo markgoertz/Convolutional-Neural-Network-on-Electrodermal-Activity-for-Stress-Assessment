@@ -13,11 +13,11 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras import layers, models, regularizers, optimizers, callbacks
-from tensorflow.keras.metrics import BinaryAccuracy, AUC, Precision, Recall, Metric
 from tensorflow.keras.layers import Input, Conv1D, MaxPooling1D, Flatten, Dense, concatenate, Dropout
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Model  # Import Model here
-
-
+from Helper import F1Score
+from Helper import OpenerHelper
 import dvc.api
 from dvclive import Live
 from dvclive.keras import DVCLiveCallback  # Import the callback
@@ -60,10 +60,6 @@ def plot_history_metrics(history_dict: dict):
         plt.title(str(key))
     plt.show()
 
-# %%
-def load_df():
-    df = pd.read_csv("data/result_df.csv")
-    return df
 
 # %%
 def Clean_missing_values(numpy_data):
@@ -83,23 +79,6 @@ def Remove_missing_values(x_data, y_data):
 
 
 # %%
-def load_data_from_pickle(directory):
-    """
-    Load all data from pickle files in the specified directory.
-
-    Returns:
-        tuple: Loaded training and test data as dictionaries.
-    """
-    
-    data = {}
-    for filename in os.listdir(directory):
-        if filename.endswith('.pkl'):
-            key = filename.split('.')[0]  # Use the filename without extension as key
-            data[key] = pd.read_pickle(os.path.join(directory, filename))
-
-    return data
-
-# %%
 def calculate_class_weights(df, label_column):
     vals_dict = {}
     for i in df[label_column]:
@@ -112,27 +91,6 @@ def calculate_class_weights(df, label_column):
 
     print(f"Weight dict for model: {weight_dict}")
     return weight_dict
-
-# %%
-
-class F1Score(Metric):
-    def __init__(self, name='f1_score', **kwargs):
-        super(F1Score, self).__init__(name=name, **kwargs)
-        self.precision = Precision()
-        self.recall = Recall()
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        self.precision.update_state(y_true, y_pred, sample_weight)
-        self.recall.update_state(y_true, y_pred, sample_weight)
-
-    def reset_states(self):
-        self.precision.reset_states()
-        self.recall.reset_states()
-
-    def result(self):
-        precision = self.precision.result()
-        recall = self.recall.result()
-        return 2 * ((precision * recall) / (precision + recall + tf.keras.backend.epsilon()))
 
 
 # %%
@@ -298,11 +256,10 @@ def filter_columns(data, metrics):
     return filtered_data
 
 # %%
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 def main():
     df = load_df()
-    datasets = load_data_from_pickle(DATA_PATH)
+    datasets = OpenerHelper.load_data_from_pickle(DATA_PATH)
  
     # Extract the datasets
     x_train = datasets['x_train']
@@ -327,8 +284,6 @@ def main():
     # Train model
     x = Preparing_model(x_train, y_train, x_val, y_val, weight_dict)
     print(f"Model training completed")
-
-    return y_val
 
 
 
