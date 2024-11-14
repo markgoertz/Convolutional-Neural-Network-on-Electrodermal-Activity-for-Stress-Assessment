@@ -65,8 +65,8 @@ def plot_history_metrics(history_dict: dict):
 def Clean_missing_values(numpy_data):
     numpy_data['x_train'], numpy_data['y_train'] = Remove_missing_values(numpy_data['x_train'], numpy_data['y_train'])
     numpy_data['x_val'], numpy_data['y_val'] = Remove_missing_values(numpy_data['x_val'], numpy_data['y_val'])
-    numpy_data['x_test_1'], numpy_data['y_test_1'] = Remove_missing_values(numpy_data['x_test_1'], numpy_data['y_test_1'])
-    numpy_data['x_test_2'], numpy_data['y_test_2'] = Remove_missing_values(numpy_data['x_test_2'], numpy_data['y_test_2'])
+    numpy_data['x_val_1'], numpy_data['y_test_1'] = Remove_missing_values(numpy_data['x_val_1'], numpy_data['y_test_1'])
+    numpy_data['x_val_2'], numpy_data['y_test_2'] = Remove_missing_values(numpy_data['x_val_2'], numpy_data['y_test_2'])
     
     return numpy_data
 
@@ -154,7 +154,7 @@ def compile_model(input_layers, model_heads):
     return model
 
 # %%
-def train_model(model, x_train, y_train, x_val, y_val, class_weight):
+def train_model(model, x_train, y_train, x_val, y_val):
     """Trains the model on the training data."""
 
     with Live(exp_message=f'Training metrics: {config["model"]["metrics"]}') as live:
@@ -163,7 +163,6 @@ def train_model(model, x_train, y_train, x_val, y_val, class_weight):
             y_train,
             validation_data=(x_val, y_val),
             epochs=config['model']['epochs'],  # Train for one epoch at a time
-            class_weight=class_weight,
             callbacks=[
                 keras.callbacks.ModelCheckpoint(
                     filepath=os.path.join(MODEL_PATH, 'best_model.keras'),  # Add filepath argument
@@ -211,7 +210,7 @@ def save_history_to_json(history, fold_number, best_model):
 
 
 # %%
-def Preparing_model(x_train, y_train, x_test, y_test, weight_dict):
+def Preparing_model(x_train, y_train, x_val, y_val):
     os.makedirs(MODEL_PATH, exist_ok=True)  # Ensure the model path exists
 
     try:
@@ -237,10 +236,10 @@ def Preparing_model(x_train, y_train, x_test, y_test, weight_dict):
             model,
             [x_train[metric] for metric in config['model']['metrics']],
             y_train,
-            [x_test[metric] for metric in config['model']['metrics']],
-            y_test,
-            weight_dict
+            [x_val[metric] for metric in config['model']['metrics']],
+            y_val
         )
+        return model
     except Exception as e:
         print(f"An error occurred during preparing: {type(e).__name__}: {e}")
 
@@ -258,7 +257,6 @@ def filter_columns(data, metrics):
 # %%
 
 def main():
-    df = load_df()
     datasets = OpenerHelper.load_data_from_pickle(DATA_PATH)
  
     # Extract the datasets
@@ -269,7 +267,7 @@ def main():
     y_val = datasets['y_val']
 
     # Calculate weights
-    weight_dict = calculate_class_weights(df, 'downsampled_label')
+    # weight_dict = calculate_class_weights(df, 'downsampled_label')
 
     # Filter columns based on config['model']['metrics']
     datasets = filter_columns(datasets, config['model']['metrics'])
@@ -282,7 +280,8 @@ def main():
             print(f"Shape of {key}: {value.shape}")
 
     # Train model
-    x = Preparing_model(x_train, y_train, x_val, y_val, weight_dict)
+    x = Preparing_model(x_train, y_train, x_val, y_val)
+    x.summary()
     print(f"Model training completed")
 
 
