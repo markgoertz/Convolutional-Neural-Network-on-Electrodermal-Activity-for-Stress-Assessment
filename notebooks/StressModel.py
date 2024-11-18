@@ -154,10 +154,10 @@ def compile_model(input_layers, model_heads):
     return model
 
 # %%
-def train_model(model, x_train, y_train, x_val, y_val):
+def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2):
     """Trains the model on the training data."""
 
-    with Live(exp_message=f'Training metrics: {config["model"]["metrics"]}') as live:
+    with Live(exp_message=f'Training metrics: {config["model"]["metrics"]} with StandardScaler + SMOTE') as live:
         model.fit(
             x_train,
             y_train,
@@ -180,8 +180,27 @@ def train_model(model, x_train, y_train, x_val, y_val):
             desc="This is a convolutional neural network model that is developed to detect stress.",
             labels=["no-stress", "stress"],
         )
-
         model.save(os.path.join(MODEL_PATH, 'best_model.h5'))
+        
+        # Evaluate the model on the test sets
+        test_1_results = model.evaluate(x_test_1, y_test_1)
+        test_2_results = model.evaluate(x_test_2, y_test_2)
+
+        # Log the results with DVC Live
+        live.log_metric("test_1_loss", test_1_results[0])
+        live.log_metric("test_1_binary_accuracy", test_1_results[1])
+        live.log_metric("test_1_auc", test_1_results[2])
+        live.log_metric("test_1_precision", test_1_results[3])
+        live.log_metric("test_1_recall", test_1_results[4])
+        live.log_metric("test_1_f1_score", test_1_results[5])
+
+        live.log_metric("test_2_loss", test_2_results[0])
+        live.log_metric("test_2_binary_accuracy", test_2_results[1])
+        live.log_metric("test_2_auc", test_2_results[2])
+        live.log_metric("test_2_precision", test_2_results[3])
+        live.log_metric("test_2_recall", test_2_results[4])
+        live.log_metric("test_2_f1_score", test_2_results[5])
+        return model
     live.end()
 
 # %%
@@ -210,7 +229,7 @@ def save_history_to_json(history, fold_number, best_model):
 
 
 # %%
-def Preparing_model(x_train, y_train, x_val, y_val):
+def Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2):
     os.makedirs(MODEL_PATH, exist_ok=True)  # Ensure the model path exists
 
     try:
@@ -237,7 +256,11 @@ def Preparing_model(x_train, y_train, x_val, y_val):
             [x_train[metric] for metric in config['model']['metrics']],
             y_train,
             [x_val[metric] for metric in config['model']['metrics']],
-            y_val
+            y_val,
+            [x_test_1[metric] for metric in config['model']['metrics']],
+            [x_test_2[metric] for metric in config['model']['metrics']],
+            y_test_1,
+            y_test_2
         )
         return model
     except Exception as e:
@@ -266,6 +289,12 @@ def main():
     x_val = datasets['x_val']
     y_val = datasets['y_val']
 
+    x_test_1 = datasets['x_test_1']
+    x_test_2 = datasets['x_test_2']
+
+    y_test_1 = datasets['y_test_1']
+    y_test_2 = datasets['y_test_2']
+
     # Calculate weights
     # weight_dict = calculate_class_weights(df, 'downsampled_label')
 
@@ -280,7 +309,7 @@ def main():
             print(f"Shape of {key}: {value.shape}")
 
     # Train model
-    x = Preparing_model(x_train, y_train, x_val, y_val)
+    x = Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2)
     x.summary()
     print(f"Model training completed")
 
