@@ -1,5 +1,5 @@
 [core]
-    remote = smartwearables
-['remote "smartwearables"']
+    remote = myremote
+['remote "myremote"']
     url = azure://dvcremote/data
     account_name = smartwearables
