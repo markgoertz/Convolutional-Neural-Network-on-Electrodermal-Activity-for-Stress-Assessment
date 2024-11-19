@@ -157,7 +157,7 @@ def compile_model(input_layers, model_heads):
 def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2):
     """Trains the model on the training data."""
 
-    with Live(exp_message=f'Training metrics: {config["model"]["metrics"]} with StandardScaler + SMOTE') as live:
+    with Live(exp_message=f'Training metrics: {config["model"]["metrics"]} with MinMaxScaler + SMOTE') as live:
         model.fit(
             x_train,
             y_train,

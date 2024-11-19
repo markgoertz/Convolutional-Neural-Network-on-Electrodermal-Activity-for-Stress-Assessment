@@ -5,14 +5,8 @@ model:
   activation: relu
   metrics:
   - EDA
-  - BVP
-  - TEMP
-  - ACC
   kernel_size: 3
   shuffle_buffer_size: 1024
   input_shapes:
     EDA: 32
-    BVP: 256
-    TEMP: 32
-    ACC: 256
   input_features: 1
