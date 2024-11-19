@@ -2,3 +2,4 @@
     remote = smartwearables
 ['remote "smartwearables"']
     url = azure://dvcremote/data
+    account_name = smartwearables
