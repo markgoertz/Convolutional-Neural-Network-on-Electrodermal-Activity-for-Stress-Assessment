@@ -98,18 +98,20 @@ def create_model_head(input_layer):
     # First convolutional layer
     x = tf.keras.layers.Conv1D(filters=32, kernel_size=config["model"]["kernel_size"], 
                       activation=config["model"]["activation"], padding="same", 
-                      kernel_regularizer=tf.keras.regularizers.l2(0.001))(input_layer)
+                      kernel_regularizer=tf.keras.regularizers.l2(config["model"]["kernel_regularizer"]))(input_layer)
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)
     
     # Second convolutional layer
-    x = tf.keras.layers.Conv1D(64, kernel_size=config["model"]["kernel_size"], activation=config["model"]["activation"])(x)
+    x = tf.keras.layers.Conv1D(64, kernel_size=config["model"]["kernel_size"], 
+                      activation=config["model"]["activation"], padding="same", 
+                      kernel_regularizer=tf.keras.regularizers.l2(config["model"]["kernel_regularizer"]))(x)
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)   
     
     x = tf.keras.layers.Conv1D(filters=128, kernel_size=config["model"]["kernel_size"], 
                       activation=config["model"]["activation"], padding="same", 
-                      kernel_regularizer=tf.keras.regularizers.l2(0.001))(x)
+                      kernel_regularizer=tf.keras.regularizers.l2(config["model"]["kernel_regularizer"]))(x)
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)
     
@@ -125,7 +127,9 @@ def build_model(input_layers, model_heads):
 
     # Add additional layers after merging
     x = tf.keras.layers.Dense(128, activation='relu')(combined)
+    x = tf.keras.layers.Dropout(0.3)(x)
     x = tf.keras.layers.Dense(64, activation='relu')(x)
+    x = tf.keras.layers.Dropout(0.3)(x)
     outputs = tf.keras.layers.Dense(1, activation='sigmoid')(x)  # Adjust based on your task
 
     # Final model
@@ -154,7 +158,7 @@ def compile_model(input_layers, model_heads):
     return model
 
 # %%
-def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2):
+def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2, weight_dict):
     """Trains the model on the training data."""
 
     with Live(exp_message=f'Training metrics: {config["model"]["metrics"]} with MinMaxScaler + SMOTE') as live:
@@ -162,7 +166,8 @@ def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_tes
             x_train,
             y_train,
             validation_data=(x_val, y_val),
-            epochs=config['model']['epochs'],  # Train for one epoch at a time
+            class_weight=weight_dict,
+            epochs=config['model']['epochs'], # Train for one epoch at a time
             callbacks=[
                 keras.callbacks.ModelCheckpoint(
                     filepath=os.path.join(MODEL_PATH, 'best_model.keras'),  # Add filepath argument
@@ -229,7 +234,7 @@ def save_history_to_json(history, fold_number, best_model):
 
 
 # %%
-def Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2):
+def Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2, weight_dict):
     os.makedirs(MODEL_PATH, exist_ok=True)  # Ensure the model path exists
 
     try:
@@ -251,7 +256,7 @@ def Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1
 
         model = compile_model(input_layers, model_heads)
 
-        train_model(
+        model = train_model(
             model,
             [x_train[metric] for metric in config['model']['metrics']],
             y_train,
@@ -260,7 +265,8 @@ def Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1
             [x_test_1[metric] for metric in config['model']['metrics']],
             [x_test_2[metric] for metric in config['model']['metrics']],
             y_test_1,
-            y_test_2
+            y_test_2, 
+            weight_dict
         )
         return model
     except Exception as e:
@@ -277,9 +283,16 @@ def filter_columns(data, metrics):
             filtered_data[key] = value
     return filtered_data
 
+
+#%%
+def load_df():
+    df = pd.read_csv("data/result_df.csv")
+    return df
+
 # %%
 
 def main():
+    df = load_df()
     datasets = OpenerHelper.load_data_from_pickle(DATA_PATH)
  
     # Extract the datasets
@@ -297,7 +310,9 @@ def main():
 
     # Calculate weights
     # weight_dict = calculate_class_weights(df, 'downsampled_label')
-
+    # Calculate weights
+    weight_dict = calculate_class_weights(df, 'downsampled_label')
+    print(f"Weight dict: {weight_dict}")
     # Filter columns based on config['model']['metrics']
     datasets = filter_columns(datasets, config['model']['metrics'])
 
@@ -309,8 +324,7 @@ def main():
             print(f"Shape of {key}: {value.shape}")
 
     # Train model
-    x = Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2)
-    x.summary()
+    x = Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2, weight_dict)
     print(f"Model training completed")
 
 
