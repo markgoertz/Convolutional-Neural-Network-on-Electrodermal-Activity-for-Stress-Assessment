@@ -3,7 +3,7 @@ model:
   epochs: 30
   batch_size: 32
   activation: relu
-  metrics: ['EDA', 'BVP', 'TEMP', 'ACC']
+  metrics: ['EDA', 'TEMP', 'ACC']
   kernel_size: 3
   shuffle_buffer_size: 1024
   kernel_regularizer: 0.01
