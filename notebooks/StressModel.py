@@ -113,10 +113,8 @@ def create_model_head(input_layer):
                       activation=config["model"]["activation"], padding="same", 
                       kernel_regularizer=tf.keras.regularizers.l2(config["model"]["kernel_regularizer"]))(x)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.MaxPooling1D(pool_size=2)(x)
+    x = tf.keras.layers.GlobalMaxPool1D()(x)
     
-    # Flatten the output
-    x = tf.keras.layers.Flatten()(x)
 
     return x  
 
@@ -158,7 +156,7 @@ def compile_model(input_layers, model_heads):
     return model
 
 # %%
-def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2, weight_dict):
+def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2):
     """Trains the model on the training data."""
 
     with Live(exp_message=f'Training metrics: {config["model"]["metrics"]} with MinMaxScaler + SMOTE') as live:
@@ -166,7 +164,6 @@ def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_tes
             x_train,
             y_train,
             validation_data=(x_val, y_val),
-            class_weight=weight_dict,
             epochs=config['model']['epochs'], # Train for one epoch at a time
             callbacks=[
                 keras.callbacks.ModelCheckpoint(
@@ -234,7 +231,7 @@ def save_history_to_json(history, fold_number, best_model):
 
 
 # %%
-def Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2, weight_dict):
+def Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2):
     os.makedirs(MODEL_PATH, exist_ok=True)  # Ensure the model path exists
 
     try:
@@ -265,8 +262,7 @@ def Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1
             [x_test_1[metric] for metric in config['model']['metrics']],
             [x_test_2[metric] for metric in config['model']['metrics']],
             y_test_1,
-            y_test_2, 
-            weight_dict
+            y_test_2
         )
         return model
     except Exception as e:
@@ -292,7 +288,6 @@ def load_df():
 # %%
 
 def main():
-    df = load_df()
     datasets = OpenerHelper.load_data_from_pickle(DATA_PATH)
  
     # Extract the datasets
@@ -308,11 +303,6 @@ def main():
     y_test_1 = datasets['y_test_1']
     y_test_2 = datasets['y_test_2']
 
-    # Calculate weights
-    # weight_dict = calculate_class_weights(df, 'downsampled_label')
-    # Calculate weights
-    weight_dict = calculate_class_weights(df, 'downsampled_label')
-    print(f"Weight dict: {weight_dict}")
     # Filter columns based on config['model']['metrics']
     datasets = filter_columns(datasets, config['model']['metrics'])
 
@@ -324,7 +314,7 @@ def main():
             print(f"Shape of {key}: {value.shape}")
 
     # Train model
-    x = Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2, weight_dict)
+    x = Preparing_model(x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2)
     print(f"Model training completed")
 
 
