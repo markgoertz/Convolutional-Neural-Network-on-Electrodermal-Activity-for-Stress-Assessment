@@ -1,0 +1,8 @@
+*
+!models/best_model.h5
+!app.py
+!uploads/
+!requirements.txt
+!Dockerfile
+!docker-compose.yml
+!utilities/
