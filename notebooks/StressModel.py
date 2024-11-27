@@ -16,8 +16,7 @@ from tensorflow.keras import layers, models, regularizers, optimizers, callbacks
 from tensorflow.keras.layers import Input, Conv1D, MaxPooling1D, Flatten, Dense, concatenate, Dropout
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Model  # Import Model here
-from Helper import F1Score
-from Helper import OpenerHelper
+from helper import F1Score, OpenerHelper
 import dvc.api
 from dvclive import Live
 from dvclive.keras import DVCLiveCallback  # Import the callback
