@@ -61,7 +61,7 @@ jobs:
       run: |
         # Your ML workflow goes here
         pip install -r requirements.txt
-        python code/eda_signal_classification.py
+        python notebooks/StressModel.py
         
         # Post CML report as a comment in GitHub
         echo "## Model Metrics" > report.md
