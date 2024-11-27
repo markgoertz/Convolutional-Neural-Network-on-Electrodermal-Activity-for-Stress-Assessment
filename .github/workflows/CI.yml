@@ -12,9 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    outputs:
-      merged_data: ${{ steps.extract.outputs.merged_data }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,40 +37,60 @@ jobs:
           src: "./code"
           jupyter: true
 
-  run:
+  DVC-CML-Pipeline:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-     # may need to setup NodeJS & Python3 on e.g. self-hosted
-     # - uses: actions/setup-node@v3
-     #   with:
-     #     node-version: '16'
-     # - uses: actions/setup-python@v4
-     #   with:
-     #     python-version: '3.x'
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install DVC
+      uses: iterative/setup-dvc@v1
+      
+    - name: Install CML
+      uses: iterative/setup-cml@v2
+     
     - name: List contents of data directory
       run: ls -l data
+
+    - name: List contents of code directory
+      run: ls -l notebooks
     
-    - uses: iterative/setup-cml@v2
-    - name: Write CML report
+    - name: Train model
       env:
-        REPO_TOKEN: ${{ secrets.TOKEN }}
+        AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
+        AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
       run: |
-        # Your ML workflow goes here
-        pip install -r requirements.txt
-        python notebooks/StressModel.py
+        pip install -r requirements.txt  # Install dependencies
+        dvc pull data/results --run-cache        # Pull data & run-cache from Azure Blob Storage
+        dvc repro                        # Reproduce pipeline                    
+
+    - name: Create CML Report
+      env:
+        REPO_TOKEN: ${{ secrets.MY_GITHUB_PAT }}
+      run: |         
+        echo "## Metrics: workflow" >> report.md
+
+        # Show metrics and parameters
+        dvc metrics show --md >> report.md
+        dvc params diff --md >> report.md
+
+        # Add plots section
+        echo "## Plots" >> report.md
+        echo "### Dataset distribution" >> report.md
+        echo '![](images/preprocessing/dataset_distribution.png "Train, Validation, Test split")' >> report.md
+        echo '![](images/preprocessing/SMOTE.png "Samples Distribution")' >> report.md
         
-        # Post CML report as a comment in GitHub
-        echo "## Model Metrics" > report.md
-        cat code/metrics.txt >> report.md
-
-        echo "## Model data input" >> report.md
-        echo '![](dataset_distribution.png)' >> report.md
-
-        echo "## Model Performance" >> report.md
-        echo "Model performance metrics are on the plot below." >> report.md
-        echo '![](model_results.png)' >> report.md
-        echo '![](folds.png)' >> report.md
-        
-
-        cml comment create --publish report.md        
+        dvc plots show -o plots
+        # Create a comment with the report
+        cml comment create report.md
+    
+    - name: Archive plots
+      uses: actions/upload-artifact@v4
+      with:
+        name: Runner training evaluation plots
+        path: plots/index.html
