@@ -1,11 +1,11 @@
 name: Deploy Model via Docker
 
-on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+on: []
+  # workflow_run:
+  #   workflows:
+  #     - CI
+  #   types:
+  #     - completed
 
 permissions:
   actions: write
@@ -14,21 +14,29 @@ permissions:
 
 jobs:
   build-and-publish:
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+    # if: >
+    #   github.event.workflow_run.conclusion == 'success' &&
+    #   github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Set up DVC
+      - name: Install DVC
+        uses: iterative/setup-dvc@v1
+      
+      - name: Train model
+        env:
+          AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
         run: |
-          pip install dvc[azure]  # Replace `[azure]` with your DVC remote type
-          dvc pull models --run-cache  # Pull the model from the DVC remote
-          ls models
+          dvc pull models --run-cache        # Pull data & run-cache from Azure Blob Storage
           
+      - name: check model files
+        run: |
+          ls -l models
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
