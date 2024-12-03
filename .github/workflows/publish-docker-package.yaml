@@ -21,12 +21,16 @@ jobs:
       - name: Install DVC
         uses: iterative/setup-dvc@v1
       
-      - name: Train model
+      - name: Check model files
+        run: |
+          ls -l models
+
+      - name: Get latest DVC model
         env:
           AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
         run: |
-          dvc pull models --run-cache        # Pull data & run-cache from Azure Blob Storage
+          dvc pull models/best_model.h5.dvc --run-cache        # Pull data & run-cache from Azure Blob Storage
           
       - name: check model files
         run: |
