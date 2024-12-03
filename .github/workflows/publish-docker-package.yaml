@@ -26,7 +26,7 @@ jobs:
       - name: Set up DVC
         run: |
           pip install dvc[azure]  # Replace `[azure]` with your DVC remote type
-          dvc pull  # Pull the latest model and datasets
+          dvc pull models # Pull the latest model
           ls -al  # List files to confirm the model is downloaded
 
       - name: Set up Docker Buildx
