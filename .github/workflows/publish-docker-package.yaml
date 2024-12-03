@@ -27,8 +27,8 @@ jobs:
         run: |
           pip install dvc[azure]  # Replace `[azure]` with your DVC remote type
           dvc pull models --run-cache  # Pull the model from the DVC remote
-          ls -al  # List files to confirm the model is downloaded
-
+          ls models
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
