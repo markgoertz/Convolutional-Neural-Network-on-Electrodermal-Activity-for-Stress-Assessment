@@ -16,14 +16,11 @@ stages:
       params.yaml:
         model:
           learning_rate: 0.001
-          epochs: 1
+          epochs: 30
           batch_size: 32
           activation: relu
           metrics:
           - EDA
-          - BVP
-          - TEMP
-          - ACC
           kernel_size: 3
           shuffle_buffer_size: 1024
           kernel_regularizer: 0.001
@@ -33,20 +30,15 @@ stages:
             TEMP: 32
             ACC: 256
           input_features: 1
+          scaler: StandardScaler
   evaluation:
     cmd: python notebooks/evaluate.py
     deps:
     - path: models/best_model.h5
       hash: md5
-      md5: be43374d71850cc696c3c67450ee683c
-      size: 3492992
+      md5: 6d46c673389a76852469ddfe4d16a2c0
+      size: 1003808
     - path: notebooks/evaluate.py
       hash: md5
-      md5: cf44746b698c95567f3d2577a1832aca
-      size: 7023
-    outs:
-    - path: images/evaluation/plots
-      hash: md5
-      md5: 46dd183182988504e74b8aef7b1407eb.dir
-      size: 153779
-      nfiles: 5
+      md5: 19f6b6e6fe2d41da62ee07838bfe127c
+      size: 7311
