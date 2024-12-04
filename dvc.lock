@@ -10,8 +10,8 @@ stages:
       nfiles: 8
     - path: notebooks/StressModel.py
       hash: md5
-      md5: a243538b978e8e33405bc121c73f27fa
-      size: 11587
+      md5: 4a5c22f0d9aa388c8bc4138fbfa900cc
+      size: 11500
     params:
       params.yaml:
         model:
@@ -21,9 +21,6 @@ stages:
           activation: relu
           metrics:
           - EDA
-          - BVP
-          - TEMP
-          - ACC
           kernel_size: 3
           shuffle_buffer_size: 1024
           kernel_regularizer: 0.001
@@ -33,6 +30,7 @@ stages:
             TEMP: 32
             ACC: 256
           input_features: 1
+          scaler: StandardScaler
   evaluation:
     cmd: python notebooks/evaluate.py
     deps:
