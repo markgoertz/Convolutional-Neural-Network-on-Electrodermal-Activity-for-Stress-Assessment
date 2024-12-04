@@ -1,11 +1,15 @@
-stages:
-  training:
-    cmd: python notebooks/StressModel.py
+params:
+- params.yaml
+- dvclive/params.yaml
+
 metrics:
 - dvclive/metrics.json
+
 plots:
 - dvclive/plots/metrics:
     x: step
+- images/evaluation/plots
+
 artifacts:
   best_model:
     path: models/best_model.h5
@@ -15,5 +19,18 @@ artifacts:
     labels:
     - no-stress
     - stress
-params:
-- dvclive/params.yaml
+
+stages:
+  training:
+    cmd: python notebooks/StressModel.py
+    deps:
+    - notebooks/StressModel.py
+    - data/results
+    params:
+    - model
+
+  evaluation:
+    cmd: python notebooks/evaluate.py
+    deps:
+    - notebooks/evaluate.py
+    - models/best_model.h5
