@@ -10,8 +10,8 @@ stages:
       nfiles: 8
     - path: notebooks/StressModel.py
       hash: md5
-      md5: a243538b978e8e33405bc121c73f27fa
-      size: 11587
+      md5: 4a5c22f0d9aa388c8bc4138fbfa900cc
+      size: 11500
     params:
       params.yaml:
         model:
@@ -33,3 +33,20 @@ stages:
             TEMP: 32
             ACC: 256
           input_features: 1
+  evaluation:
+    cmd: python notebooks/evaluate.py
+    deps:
+    - path: models/best_model.h5
+      hash: md5
+      md5: be43374d71850cc696c3c67450ee683c
+      size: 3492992
+    - path: notebooks/evaluate.py
+      hash: md5
+      md5: 457643562cbd18ae9e658037924521e0
+      size: 5269
+    outs:
+    - path: images/evaluation/plots
+      hash: md5
+      md5: 613d61db5710428524e13f9b9a7d0c75.dir
+      size: 151011
+      nfiles: 5

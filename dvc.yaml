@@ -1,10 +1,7 @@
 params:
 - params.yaml
-- dvclive/params.yaml
 plots:
 - images/evaluation/plots
-- dvclive/plots/metrics:
-    x: step
 - images/evaluation/plots/plots/images
 - images/evaluation/plots/plots/images
 artifacts:
@@ -32,5 +29,3 @@ stages:
     - models/best_model.h5
     outs:
     - images/evaluation/plots
-metrics:
-- dvclive/metrics.json

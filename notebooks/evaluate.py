@@ -2,7 +2,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pickle
-from sklearn.metrics import confusion_matrix, precision_score, recall_score, accuracy_score, roc_auc_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 from tensorflow.keras.models import load_model
@@ -30,7 +29,7 @@ def create_segments(time_indices, values, stress_periods):
     
     return segments
 
-def plot_physiological_signals(x_test_path, y_test_path, model):
+def plot_physiological_signals(x_test_path, y_test_path, model, subject_id):
     
     with Live() as live:
         # Load x_test and y_test from pickle files
@@ -59,65 +58,69 @@ def plot_physiological_signals(x_test_path, y_test_path, model):
         # Make predictions
         y_pred_probs = model.predict([data_dict['EDA'], data_dict['BVP'], data_dict['TEMP'], data_dict['ACC']])
         y_pred = (y_pred_probs > 0.5).astype(int).flatten()
-
-        # Compute metrics
-        conf_matrix = confusion_matrix(y_test, y_pred)
-        precision = precision_score(y_test, y_pred)
-        recall = recall_score(y_test, y_pred)
-        accuracy = accuracy_score(y_test, y_pred)
-        auc = roc_auc_score(y_test, y_pred_probs)
-
-        # Plot and log the confusion matrix
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues',
-                    xticklabels=['No Stress', 'Stress'], yticklabels=['No Stress', 'Stress'])
-        plt.xlabel('Predicted Label')
-        plt.ylabel('True Label')
-        plt.title('Confusion Matrix')
-        confusion_matrix_path = "images/evaluation/plots/confusion_matrix.png"
-        plt.savefig(confusion_matrix_path, dpi=120)
         
-        live.log_image("confusion_matrix", confusion_matrix_path)
-
-        # Plot the signals with true and predicted stress periods
+        live.log_plot("confusion_matrix", y_test, y_pred, name=f"confusion_matrix subject: {subject_id}") 
+        
+        # Create time indices for signals
         eda_time_indices = np.arange(len(eda)).tolist()
 
-
+        # Define stress periods based on true and predicted labels
         stress_periods = [(i * 8, (i + 1) * 8) for i, label in enumerate(y_test) if label == 1]
         predicted_stress_periods = [(i * 8, (i + 1) * 8) for i, pred in enumerate(y_pred) if pred == 1]
 
+        # Initialize the Plotly figure
         fig = go.Figure()
 
-        for signal_name, time_indices, values in zip(
-            ['EDA'],
-            [eda_time_indices],
-            [eda]
-        ):
-            fig.add_trace(go.Scatter(
-                x=time_indices,
-                y=values,
-                mode='lines',
-                name=signal_name,
-                line=dict(color='blue'),
-                showlegend=True
-            ))
+        # Add EDA signal
+        fig.add_trace(go.Scatter(
+            x=eda_time_indices,
+            y=eda,
+            mode='lines',
+            name='EDA',
+            line=dict(color='blue'),
+            showlegend=True
+        ))
 
+        # Add green background for true stress periods
         for start, end in stress_periods:
-            fig.add_shape(type="rect", x0=start, x1=end, y0=0, y1=1,
-                        xref="x", yref="paper", fillcolor="rgba(0,255,0,0.2)", line=dict(width=0))
+            fig.add_shape(
+                type="rect",
+                x0=start,
+                x1=end,
+                y0=0,
+                y1=1,
+                xref="x",
+                yref="paper",
+                fillcolor="rgba(0,255,0,0.2)",
+                line=dict(width=0)
+            )
 
+        # Add red background for predicted stress periods
         for start, end in predicted_stress_periods:
-            fig.add_shape(type="rect", x0=start, x1=end, y0=0, y1=1,
-                        xref="x", yref="paper", fillcolor="rgba(255,0,0,0.3)", line=dict(width=0))
+            fig.add_shape(
+                type="rect",
+                x0=start,
+                x1=end,
+                y0=0,
+                y1=1,
+                xref="x",
+                yref="paper",
+                fillcolor="rgba(255,0,0,0.3)",
+                line=dict(width=0)
+            )
 
-        fig.update_layout(title='Physiological Signals with Stress Periods',
-                        xaxis_title='Time (seconds)',
-                        yaxis_title='Signal Value',
-                        legend_title='Signals')
+        # Update layout for the figure
+        fig.update_layout(
+            title=f'Physiological Signals with Stress Periods of subject {subject_id}',
+            xaxis_title='Time (seconds)',
+            yaxis_title='Signal Value',
+            legend_title='Signals',
+            template='plotly_white'
+        )
 
+        # Save and log the plot image
         plot_path = "images/evaluation/plots/physiological_signals_plot.png"
         fig.write_image(plot_path)
-        
         live.log_image("physiological_signals", plot_path)
 
         return fig
@@ -134,6 +137,7 @@ def evaluate():
         "data/results/x_test_1.pkl",
         "data/results/y_test_1.pkl",
         model,
+        "S16"
     )
     print("Evaluation complete.")
 
