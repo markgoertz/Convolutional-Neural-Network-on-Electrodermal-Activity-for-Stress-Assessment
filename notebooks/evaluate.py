@@ -179,6 +179,10 @@ def evaluate():
     filepath = Path("data/WESAD/S16") / "S16_unknown_data.csv"
     
     plot_physiological_signals(filepath, model, "S16")
+        
+    filepath = Path("data/WESAD/S17") / "S17_unknown_data.csv"
+    
+    plot_physiological_signals(filepath, model, "S17")
     print("Evaluation complete.")
 
 if __name__ == "__main__":
