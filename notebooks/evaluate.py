@@ -11,27 +11,8 @@ import plotly.graph_objects as go
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, accuracy_score, roc_auc_score
 import ast
 
-def create_segments(time_indices, values, stress_periods):
-    segments = []
-    current_segment = {"x": [], "y": [], "color": "blue"}
-    for t, v in zip(time_indices, values):
-        in_stress = any(start <= t < end for start, end in stress_periods)
-        color = "red" if in_stress else "blue"
 
-        if color != current_segment["color"] and current_segment["x"]:
-            segments.append(current_segment)
-            current_segment = {"x": [], "y": [], "color": color}
-
-        current_segment["x"].append(t)
-        current_segment["y"].append(v)
-        current_segment["color"] = color
-
-    if current_segment["x"]:
-        segments.append(current_segment)
-    
-    return segments
-
-def plot_physiological_signals(data, model, subject_id):
+def plot_physiological_signals(file_path, model, subject_id):
     
     with Live() as live:
     # Load x_test and y_test from pickle files
@@ -113,14 +94,39 @@ def plot_physiological_signals(data, model, subject_id):
         predicted_stress_times = df[df['y_pred'] == 1].index * 8  # Each index represents 8 seconds
         predicted_stress_periods = [(start, start + 8) for start in predicted_stress_times]
 
+        # Function to create segments with color change
+        def create_segments(time_indices, values):
+            segments = []
+            current_segment = {"x": [], "y": [], "color": "blue"}
+            for i, (t, v) in enumerate(zip(time_indices, values)):
+                # Check if we're in a stress period
+                in_stress = any(start <= t < end for start, end in stress_periods)
+                color = "red" if in_stress else "blue"
+
+                # If color changes, start a new segment
+                if color != current_segment["color"] and current_segment["x"]:
+                    segments.append(current_segment)
+                    current_segment = {"x": [], "y": [], "color": color}
+
+                # Add point to the current segment
+                current_segment["x"].append(t)
+                current_segment["y"].append(v)
+                current_segment["color"] = color
+
+            # Append the last segment
+            if current_segment["x"]:
+                segments.append(current_segment)
+            
+            return segments
+
         # Create figure
         fig = go.Figure()
 
         # Plot each physiological signal with color segments
         for signal_name, time_indices, values in zip(
-            ['EDA', 'TEMP', 'BVP', 'ACC'],
-            [eda_time_indices, temp_time_indices, bvp_time_indices, acc_time_indices],
-            [eda_values, temp_values, bvp_values, acc_values]
+            ['EDA'],
+            [eda_time_indices],
+            [eda_values]
         ):
 
             segments = create_segments(time_indices, values)
@@ -158,7 +164,7 @@ def plot_physiological_signals(data, model, subject_id):
         )
 
         # Save and log the plot image
-        plot_path = "images/evaluation/plots/physiological_signals_plot.png"
+        plot_path = f"images/evaluation/plots/physiological_signals_plot_{subject_id}.png"
         fig.write_image(plot_path)
         live.log_image("physiological_signals", plot_path)
 
