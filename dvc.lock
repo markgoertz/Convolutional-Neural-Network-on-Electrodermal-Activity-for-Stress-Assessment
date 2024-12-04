@@ -21,6 +21,9 @@ stages:
           activation: relu
           metrics:
           - EDA
+          - BVP
+          - TEMP
+          - ACC
           kernel_size: 3
           shuffle_buffer_size: 1024
           kernel_regularizer: 0.001
@@ -36,7 +39,7 @@ stages:
     deps:
     - path: models/best_model.h5
       hash: md5
-      md5: 57e7eec8976e5efbcf673af1fa82501d
+      md5: f77cbe51fe79f8fb201a0a169d4b4adf
       size: 3492992
     - path: notebooks/evaluate.py
       hash: md5
