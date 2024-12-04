@@ -9,7 +9,7 @@ from dvclive import Live
 from helper import F1Score
 import plotly.graph_objects as go
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, accuracy_score, roc_auc_score
-
+import ast
 
 def create_segments(time_indices, values, stress_periods):
     segments = []
@@ -31,89 +31,110 @@ def create_segments(time_indices, values, stress_periods):
     
     return segments
 
-def plot_physiological_signals(x_test_path, y_test_path, model, subject_id):
+def plot_physiological_signals(data, model, subject_id):
     
     with Live() as live:
-        # Load x_test and y_test from pickle files
-        with open(x_test_path, "rb") as f:
-            x_test = pickle.load(f)
-        with open(y_test_path, "rb") as f:
-            y_test = pickle.load(f)
+    # Load x_test and y_test from pickle files
+        df = pd.read_csv(file_path)
 
-        # Ensure x_test contains required keys
-        required_keys = ['EDA', 'TEMP', 'BVP', 'ACC']
-        for key in required_keys:
-            if key not in x_test:
-                raise ValueError(f"Missing required key '{key}' in x_test pickle file.")
+        # Convert list-like strings to actual lists
+        for column in ['EDA', 'TEMP', 'BVP', 'ACC']:
+            df[column] = df[column].apply(ast.literal_eval)
 
-        # Extract signals
-        eda, temp, bvp, acc = x_test['EDA'], x_test['TEMP'], x_test['BVP'], x_test['ACC']
-
-        # Reshape and preprocess signals for the model
-        data_dict = {
-            'EDA': np.array(eda).reshape(-1, 32, 1),
-            'TEMP': np.array(temp).reshape(-1, 32, 1),
-            'BVP': np.array(bvp).reshape(-1, 256, 1),
-            'ACC': np.array(acc).reshape(-1, 256, 1)
+        # Define sample rates (in Hz)
+        sampling_rates = {
+            'EDA': 4,   # 4 Hz for EDA
+            'TEMP': 4,  # 4 Hz for TEMP
+            'BVP': 32,  # 32 Hz for BVP
+            'ACC': 32   # 32 Hz for ACC
         }
 
-        # Make predictions
+        # Convert the data into a dictionary format suitable for model.predict
+        data_dict = {
+            'EDA': np.array(df['EDA'].tolist()).reshape(-1, 32, 1),
+            'TEMP': np.array(df['TEMP'].tolist()).reshape(-1, 32, 1),
+            'BVP': np.array(df['BVP'].tolist()).reshape(-1, 256, 1),
+            'ACC': np.array(df['ACC'].tolist()).reshape(-1, 256, 1)
+        }
+
+        # Generate predictions using the model
         y_pred_probs = model.predict([data_dict['EDA'], data_dict['BVP'], data_dict['TEMP'], data_dict['ACC']])
         y_pred = (y_pred_probs > 0.5).astype(int).flatten()
-        # Compute metrics
-        conf_matrix = confusion_matrix(y_test, y_pred)
-        precision = precision_score(y_test, y_pred)
-        recall = recall_score(y_test, y_pred)
-        accuracy = accuracy_score(y_test, y_pred)
-        auc = roc_auc_score(y_test, y_pred_probs)
+        y = df['labels']
 
-        # Plot and log the confusion matrix
+        # Store y_pred in the dataframe
+        df['y_pred'] = y_pred
+        df['y_pred_probs'] = y_pred_probs
+
+        # Compute the confusion matrix and metrics
+        conf_matrix = confusion_matrix(y, y_pred)
+        print("Confusion Matrix:")
+        print(conf_matrix)
+
+        precision = precision_score(y, y_pred)
+        recall = recall_score(y, y_pred)
+        accuracy = accuracy_score(y, y_pred)
+        auc = roc_auc_score(y, y_pred_probs)
+
+        print(f"Precision: {precision}")
+        print(f"Recall: {recall}")
+        print(f"Accuracy: {accuracy}")
+        print(f"AUC: {auc}")
+
+        # Plot the confusion matrix
         plt.figure(figsize=(8, 6))
-        sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues',
-                    xticklabels=['No Stress', 'Stress'], yticklabels=['No Stress', 'Stress'])
+        sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['No Stress', 'Stress'], yticklabels=['No Stress', 'Stress'])
         plt.xlabel('Predicted Label')
         plt.ylabel('True Label')
+
         plt.title(f'Confusion Matrix of subject {subject_id}')
         confusion_matrix_path = f"images/evaluation/plots/confusion_matrix_{subject_id}.png"
         plt.savefig(confusion_matrix_path, dpi=120)
         
         live.log_image("confusion_matrix", confusion_matrix_path)
         
-        # Create time indices for signals
-        eda_time_indices = np.arange(len(eda)).tolist()
+    # Prepare data for plotting
+        eda_values = [value for segment in df['EDA'] for value in segment]
+        temp_values = [value for segment in df['TEMP'] for value in segment]
+        bvp_values = [value for segment in df['BVP'] for value in segment]
+        acc_values = [value for segment in df['ACC'] for value in segment]
 
-        # Define stress periods based on true and predicted labels
-        stress_periods = [(i * 8, (i + 1) * 8) for i, label in enumerate(y_test) if label == 1]
-        predicted_stress_periods = [(i * 8, (i + 1) * 8) for i, pred in enumerate(y_pred) if pred == 1]
+        # Create time axis for each signal
+        eda_time_indices = [i / sampling_rates['EDA'] for i in range(len(eda_values))]
+        temp_time_indices = [i / sampling_rates['TEMP'] for i in range(len(temp_values))]
+        bvp_time_indices = [i / sampling_rates['BVP'] for i in range(len(bvp_values))]
+        acc_time_indices = [i / sampling_rates['ACC'] for i in range(len(acc_values))]
 
-        # Initialize the Plotly figure
+        # Determine stress periods
+        actual_stress_times = df[df['labels'] == 1].index * 8  # Each index represents 8 seconds
+        stress_periods = [(start, start + 8) for start in actual_stress_times]
+
+        # Determine predicted stress periods
+        predicted_stress_times = df[df['y_pred'] == 1].index * 8  # Each index represents 8 seconds
+        predicted_stress_periods = [(start, start + 8) for start in predicted_stress_times]
+
+        # Create figure
         fig = go.Figure()
 
-        # Add EDA signal
-        fig.add_trace(go.Scatter(
-            x=eda_time_indices,
-            y=eda,
-            mode='lines',
-            name='EDA',
-            line=dict(color='blue'),
-            showlegend=True
-        ))
+        # Plot each physiological signal with color segments
+        for signal_name, time_indices, values in zip(
+            ['EDA', 'TEMP', 'BVP', 'ACC'],
+            [eda_time_indices, temp_time_indices, bvp_time_indices, acc_time_indices],
+            [eda_values, temp_values, bvp_values, acc_values]
+        ):
 
-        # Add green background for true stress periods
-        for start, end in stress_periods:
-            fig.add_shape(
-                type="rect",
-                x0=start,
-                x1=end,
-                y0=0,
-                y1=1,
-                xref="x",
-                yref="paper",
-                fillcolor="rgba(0,255,0,0.2)",
-                line=dict(width=0)
-            )
+            segments = create_segments(time_indices, values)
+            for segment in segments:
+                fig.add_trace(go.Scatter(
+                    x=segment["x"],
+                    y=segment["y"],
+                    mode='lines',
+                    name=signal_name,
+                    line=dict(color=segment["color"]),
+                    showlegend=True  # Only show "blue" legend once per signal
+                ))
 
-        # Add red background for predicted stress periods
+        # Add predicted stress periods as reddish-white background
         for start, end in predicted_stress_periods:
             fig.add_shape(
                 type="rect",
@@ -123,25 +144,23 @@ def plot_physiological_signals(x_test_path, y_test_path, model, subject_id):
                 y1=1,
                 xref="x",
                 yref="paper",
-                fillcolor="rgba(255,0,0,0.3)",
+                fillcolor="rgba(255, 0, 0, 0.3)",
                 line=dict(width=0)
             )
 
-        # Update layout for the figure
+        # Update layout with background color and axis titles
         fig.update_layout(
-            title=f'Physiological Signals with Stress Periods of subject {subject_id}',
+            title='Physiological Signals Over Time with Stress Moments',
             xaxis_title='Time (seconds)',
             yaxis_title='Signal Value',
             legend_title='Signals',
-            template='plotly_white'
+            template='plotly',
         )
 
         # Save and log the plot image
         plot_path = "images/evaluation/plots/physiological_signals_plot.png"
         fig.write_image(plot_path)
         live.log_image("physiological_signals", plot_path)
-
-        return fig
 
 # Evaluation function
 def evaluate():
@@ -151,12 +170,9 @@ def evaluate():
     model = load_model(model_path, custom_objects={'F1Score': F1Score})
     print(model.summary())
     
-    plot_physiological_signals(
-        "data/results/x_test_1.pkl",
-        "data/results/y_test_1.pkl",
-        model,
-        "S16"
-    )
+    filepath = Path("data/WESAD/S16") / "S16_unknown_data.csv"
+    
+    plot_physiological_signals(filepath, model, "S16")
     print("Evaluation complete.")
 
 if __name__ == "__main__":

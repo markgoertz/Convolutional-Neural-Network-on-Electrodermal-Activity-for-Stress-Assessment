@@ -4,6 +4,7 @@ plots:
 - images/evaluation/plots
 - images/evaluation/plots/plots/images
 - images/evaluation/plots/plots/images
+- dvclive/plots/images
 artifacts:
   best_model:
     path: models/best_model.h5
