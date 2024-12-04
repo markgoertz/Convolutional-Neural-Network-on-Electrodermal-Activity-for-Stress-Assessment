@@ -2,3 +2,34 @@ schema: '2.0'
 stages:
   training:
     cmd: python notebooks/StressModel.py
+    deps:
+    - path: data/results
+      hash: md5
+      md5: 5eea7b91216aed0f14819f11815eff7c.dir
+      size: 83654085
+      nfiles: 8
+    - path: notebooks/StressModel.py
+      hash: md5
+      md5: a243538b978e8e33405bc121c73f27fa
+      size: 11587
+    params:
+      params.yaml:
+        model:
+          learning_rate: 0.001
+          epochs: 1
+          batch_size: 32
+          activation: relu
+          metrics:
+          - EDA
+          - BVP
+          - TEMP
+          - ACC
+          kernel_size: 3
+          shuffle_buffer_size: 1024
+          kernel_regularizer: 0.001
+          input_shapes:
+            EDA: 32
+            BVP: 256
+            TEMP: 32
+            ACC: 256
+          input_features: 1
