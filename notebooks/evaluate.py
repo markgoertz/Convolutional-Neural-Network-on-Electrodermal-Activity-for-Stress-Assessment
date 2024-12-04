@@ -8,6 +8,8 @@ from tensorflow.keras.models import load_model
 from dvclive import Live
 from helper import F1Score
 import plotly.graph_objects as go
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, accuracy_score, roc_auc_score
+
 
 def create_segments(time_indices, values, stress_periods):
     segments = []
@@ -58,8 +60,24 @@ def plot_physiological_signals(x_test_path, y_test_path, model, subject_id):
         # Make predictions
         y_pred_probs = model.predict([data_dict['EDA'], data_dict['BVP'], data_dict['TEMP'], data_dict['ACC']])
         y_pred = (y_pred_probs > 0.5).astype(int).flatten()
+        # Compute metrics
+        conf_matrix = confusion_matrix(y_test, y_pred)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        accuracy = accuracy_score(y_test, y_pred)
+        auc = roc_auc_score(y_test, y_pred_probs)
+
+        # Plot and log the confusion matrix
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues',
+                    xticklabels=['No Stress', 'Stress'], yticklabels=['No Stress', 'Stress'])
+        plt.xlabel('Predicted Label')
+        plt.ylabel('True Label')
+        plt.title(f'Confusion Matrix of subject {subject_id}')
+        confusion_matrix_path = f"images/evaluation/plots/confusion_matrix_{subject_id}.png"
+        plt.savefig(confusion_matrix_path, dpi=120)
         
-        live.log_plot("confusion_matrix", y_test, y_pred, name=f"confusion_matrix subject: {subject_id}") 
+        live.log_image("confusion_matrix", confusion_matrix_path)
         
         # Create time indices for signals
         eda_time_indices = np.arange(len(eda)).tolist()
