@@ -1,5 +1,6 @@
 params:
 - params.yaml
+- dvclive/params.yaml
 
 metrics:
 - dvclive/metrics.json

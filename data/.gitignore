@@ -1,5 +1,8 @@
 /results
 /data.txt
-/WESAD
-/files
+/processed
 /processed_data
+/unprocessed/wesad
+/unzip/*
+/files/*
+/wesad
