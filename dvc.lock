@@ -5,13 +5,13 @@ stages:
     deps:
     - path: data/results
       hash: md5
-      md5: fbf63f9fb5f7e2c67c7e7d42ef4a17cc.dir
-      size: 83654069
+      md5: dd14e173cf070b49c6283cfbc96bf095.dir
+      size: 83654089
       nfiles: 8
     - path: notebooks/StressModel.py
       hash: md5
-      md5: 4a5c22f0d9aa388c8bc4138fbfa900cc
-      size: 11500
+      md5: a88ce5ec0ddb44dd23e6898c9714cd38
+      size: 11530
     params:
       params.yaml:
         model:
@@ -21,9 +21,6 @@ stages:
           activation: relu
           metrics:
           - EDA
-          - BVP
-          - TEMP
-          - ACC
           kernel_size: 3
           shuffle_buffer_size: 1024
           kernel_regularizer: 0.001
@@ -34,13 +31,14 @@ stages:
             ACC: 256
           input_features: 1
           scaler: StandardScaler
+          dropout: 0.3
   evaluation:
     cmd: python notebooks/evaluate.py
     deps:
     - path: models/best_model.h5
       hash: md5
-      md5: f77cbe51fe79f8fb201a0a169d4b4adf
-      size: 3492992
+      md5: 96b08701c842f744886b4dd837e58c11
+      size: 1003808
     - path: notebooks/evaluate.py
       hash: md5
       md5: bfb24f0c42035da6918522b4b583e0b4

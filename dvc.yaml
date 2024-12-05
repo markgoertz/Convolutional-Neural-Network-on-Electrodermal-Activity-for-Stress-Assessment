@@ -1,8 +1,10 @@
 params:
 - params.yaml
+- dvclive/params.yaml
 plots:
 - images/evaluation/plots
-- dvclive/plots/images
+- dvclive/plots/metrics:
+    x: step
 artifacts:
   best_model:
     path: models/best_model.h5
@@ -26,3 +28,5 @@ stages:
     deps:
     - notebooks/evaluate.py
     - models/best_model.h5
+metrics:
+- dvclive/metrics.json
