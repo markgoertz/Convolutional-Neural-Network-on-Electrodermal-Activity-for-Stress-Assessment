@@ -15,3 +15,4 @@ model:
     ACC: 256   # For BVP, 32Hz over 8 seconds
   input_features: 1 
   scaler: StandardScaler
+  dropout: 0.3
