@@ -20,7 +20,8 @@ stages:
           batch_size: 32
           activation: relu
           metrics:
-          - TEMP
+          - EDA
+          - BVP
           kernel_size: 3
           shuffle_buffer_size: 1024
           kernel_regularizer: 0.001
@@ -37,8 +38,8 @@ stages:
     deps:
     - path: models/best_model.h5
       hash: md5
-      md5: 64f9fc78273bfb9aa519bae6ddf38285
-      size: 1003808
+      md5: 5d5b9a557658f6527fc51da1f01b42a8
+      size: 1833664
     - path: notebooks/evaluate.py
       hash: md5
       md5: bfb24f0c42035da6918522b4b583e0b4
