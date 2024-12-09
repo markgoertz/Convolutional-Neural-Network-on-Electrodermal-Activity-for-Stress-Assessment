@@ -4,8 +4,8 @@ model:
   batch_size: 32
   activation: relu
   metrics:
-  - EDA
-  - ACC
+  - BVP
+  - TEMP
   kernel_size: 3
   shuffle_buffer_size: 1024
   kernel_regularizer: 0.001
