@@ -14,6 +14,9 @@ artifacts:
     labels:
     - no-stress
     - stress
+  StandardScaler-StressModel:
+    path: models/best_model.h5
+    type: model
 stages:
   training:
     cmd: python notebooks/StressModel.py
