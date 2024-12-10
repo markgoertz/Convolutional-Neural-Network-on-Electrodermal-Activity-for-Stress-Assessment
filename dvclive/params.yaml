@@ -4,7 +4,7 @@ model:
   batch_size: 32
   activation: relu
   metrics:
-  - BVP
+  - TEMP
   - ACC
   kernel_size: 3
   shuffle_buffer_size: 1024
