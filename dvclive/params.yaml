@@ -6,7 +6,7 @@ model:
   metrics:
   - EDA
   - BVP
-  - TEMP
+  - ACC
   kernel_size: 3
   shuffle_buffer_size: 1024
   kernel_regularizer: 0.001
