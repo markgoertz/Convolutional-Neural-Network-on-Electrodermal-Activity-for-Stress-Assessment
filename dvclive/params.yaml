@@ -4,6 +4,7 @@ model:
   batch_size: 32
   activation: relu
   metrics:
+  - EDA
   - BVP
   - TEMP
   - ACC
