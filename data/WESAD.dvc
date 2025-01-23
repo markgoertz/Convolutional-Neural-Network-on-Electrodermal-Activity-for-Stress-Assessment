@@ -1,6 +1,6 @@
 outs:
-- md5: c82e04eedaa116886b837001551e4984.dir
-  size: 17847329168
-  nfiles: 107
+- md5: b4811867b0099211a513b7398e2584e2.dir
+  size: 13960981760
+  nfiles: 47
   hash: md5
-  path: WESAD
+  path: wesad
