@@ -124,9 +124,9 @@ def build_model(input_layers, model_heads):
 
     # Add additional layers after merging
     x = tf.keras.layers.Dense(128, activation='relu')(combined)
-    x = tf.keras.layers.Dropout(0.3)(x)
+    x = tf.keras.layers.Dropout(config['model']['dropout'])(x)
     x = tf.keras.layers.Dense(64, activation='relu')(x)
-    x = tf.keras.layers.Dropout(0.3)(x)
+    x = tf.keras.layers.Dropout(config['model']['dropout'])(x)
     outputs = tf.keras.layers.Dense(1, activation='sigmoid')(x)  # Adjust based on your task
 
     # Final model
@@ -158,7 +158,7 @@ def compile_model(input_layers, model_heads):
 def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_test_1, y_test_2):
     """Trains the model on the training data."""
 
-    with Live(exp_message=f'Training metrics: {config["model"]["metrics"]} with MinMaxScaler + SMOTE') as live:
+    with Live() as live:
         model.fit(
             x_train,
             y_train,
@@ -202,7 +202,6 @@ def train_model(model, x_train, y_train, x_val, y_val, x_test_1, x_test_2, y_tes
         live.log_metric("test_2_recall", test_2_results[4])
         live.log_metric("test_2_f1_score", test_2_results[5])
         return model
-    live.end()
 
 # %%
 def save_history_to_json(history, fold_number, best_model):

@@ -17,3 +17,5 @@ model:
     TEMP: 32
     ACC: 256
   input_features: 1
+  scaler: StandardScaler
+  dropout: 0.3

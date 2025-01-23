@@ -1,11 +1,9 @@
-name: Publish Docker Image to GHCR
+name: Deploy Model via Docker
 
-on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+on: 
+  push:
+    branches:
+      - main
 
 permissions:
   actions: write
@@ -14,14 +12,29 @@ permissions:
 
 jobs:
   build-and-publish:
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Install DVC
+        uses: iterative/setup-dvc@v1
+      
+      - name: Check model files
+        run: |
+          ls -l models
+
+      - name: Get latest DVC model
+        env:
+          AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+        run: |
+          dvc pull models/best_model.h5.dvc --run-cache        # Pull data & run-cache from Azure Blob Storage
+          
+      - name: check model files
+        run: |
+          ls -l models
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -39,10 +52,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker Image
-        run: docker-compose -f path/to/your/docker-compose.yml build
+        run: docker-compose -f ./docker-compose.yml build
 
       - name: Tag Docker Image
-        run: docker tag $(docker images -q masterofappliedit) ghcr.io/${{ github.repository_owner }}/masterofappliedit:latest
+        run: |
+          docker tag $(docker images -q masterofappliedit) ghcr.io/${{ github.repository_owner }}/masterofappliedit:latest
 
       - name: Push Docker Image
         run: docker push ghcr.io/${{ github.repository_owner }}/masterofappliedit:latest
