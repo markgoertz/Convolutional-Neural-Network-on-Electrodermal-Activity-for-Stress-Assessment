@@ -6,11 +6,13 @@ stages:
     outs: 
       - data/processed_data
   split:
-    cmd: python code/split_train_test.ipynb
+    cmd: python code/split_train_test.py
     deps:
       - data/processed_data
     outs:
       - data/results
+      - images/evaluation 
+
   training:
     cmd: python notebooks/StressModel.py
     deps:
