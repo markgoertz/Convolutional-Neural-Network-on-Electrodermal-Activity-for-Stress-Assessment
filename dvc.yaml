@@ -1,6 +1,10 @@
 stages:
+  preprocessing:
+    cmd: python code/preprocessing/main.py
   training:
     cmd: python notebooks/StressModel.py
+    deps:
+    - code/preprocessing/main.py
 metrics:
 - dvclive/metrics.json
 plots:
