@@ -90,7 +90,7 @@ def plot_smote_class_distribution(y_train, y_train_resampled):
     plt.tight_layout()
     # plt.show()
     # Save the plot to a file
-    save_directory = os.path.join(MAIN_PATH, "images", "evaluation")
+    save_directory = os.path.join(os.getcwd(), "images", "evaluation")
     os.makedirs(save_directory, exist_ok=True)
     save_path = os.path.join(save_directory, "smote_class_distribution.png")
     plt.savefig(save_path)
@@ -146,10 +146,10 @@ def plot_dataset_distribution(x_train, y_train, x_val, y_val, x_test_1, y_test_1
     
     # Show the plot
     # plt.show()
-
-    save_directory = os.path.join(MAIN_PATH, "images", "evaluation")
+   
+    save_directory = os.path.join(os.getcwd(), "images", "evaluation")
     os.makedirs(save_directory, exist_ok=True)
-    save_path = os.path.join(save_directory, "smote_class_distribution.png")
+    save_path = os.path.join(save_directory, "smote_dataset_distribution.png")
     plt.savefig(save_path)
     print(f"Plot saved successfully to {save_path}")
 
@@ -450,7 +450,7 @@ def extract_labels(dictionary, t_df1, t_df2, label_column='labels'):
 # In[314]:
 
 
-def save_datasets_to_pickle(x_train, y_train, x_val, y_val, x_test_1, y_test_1, x_test_2, y_test_2, save_directory="../data/results/"):
+def save_datasets_to_pickle(x_train, y_train, x_val, y_val, x_test_1, y_test_1, x_test_2, y_test_2, save_directory="data/results/"):
     """Save the datasets to a pickle file.
     Args:
         x_train (ndarray): Training feature data.
@@ -476,10 +476,10 @@ def save_datasets_to_pickle(x_train, y_train, x_val, y_val, x_test_1, y_test_1, 
             "y_test_2": y_test_2
         }
         # Ensure the save directory exists
-        os.makedirs(save_directory, exist_ok=True)
+        os.makedirs(os.path.join(MAIN_PATH, save_directory), exist_ok=True)
         # Save each dataset as a separate pickle file
         for name, data in datasets.items():
-            save_path = f"{save_directory}{name}.pkl"
+            save_path = os.path.join(os.getcwd(), save_directory, f"{name}.pkl")
             with open(save_path, 'wb') as file:
                 pickle.dump(data, file)
             print(f"{name} saved successfully to {save_path}")
@@ -517,8 +517,8 @@ def dict_to_ndarray(data_dict):
 
 
 def main():
-    os.makedirs("../data/results", exist_ok=True)
-    os.makedirs("../images/evaluation", exist_ok=True)
+    os.makedirs(os.path.join(os.getcwd(), "data/results"), exist_ok=True)
+    os.makedirs(os.path.join(os.getcwd(), "images/evaluation"), exist_ok=True)
     features = ['EDA', 'BVP', 'ACC', 'TEMP']
 
     # Load the data from CSV files

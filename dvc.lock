@@ -16,3 +16,22 @@ stages:
       md5: 16f02c5dcd8a4028d453622d95a1fa19.dir
       size: 50187166
       nfiles: 15
+  split:
+    cmd: python code/split_train_test.py
+    deps:
+    - path: data/processed_data
+      hash: md5
+      md5: 16f02c5dcd8a4028d453622d95a1fa19.dir
+      size: 50187166
+      nfiles: 15
+    outs:
+    - path: data/results
+      hash: md5
+      md5: 10af25fa0fb03ce4d2b634f2b1a0bda2.dir
+      size: 73332685
+      nfiles: 8
+    - path: images/evaluation
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0

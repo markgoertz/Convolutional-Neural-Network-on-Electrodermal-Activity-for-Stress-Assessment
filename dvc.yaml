@@ -11,7 +11,7 @@ stages:
       - data/processed_data
     outs:
       - data/results
-      - images/evaluation 
+      - images/evaluation
 
   training:
     cmd: python notebooks/StressModel.py
