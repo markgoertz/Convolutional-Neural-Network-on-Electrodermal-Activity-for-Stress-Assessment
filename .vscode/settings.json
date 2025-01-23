@@ -1,4 +1,7 @@
 {
     "python.analysis.typeCheckingMode": "off",
-    "editor.find.autoFindInSelection": "multiline"
+    "editor.find.autoFindInSelection": "multiline",
+    "python.analysis.extraPaths": [
+        "./code"
+    ]
 }

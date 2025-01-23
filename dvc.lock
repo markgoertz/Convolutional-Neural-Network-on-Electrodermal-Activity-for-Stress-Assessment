@@ -3,45 +3,40 @@ stages:
   training:
     cmd: python notebooks/StressModel.py
     deps:
+    - path: code/preprocessing/main.py
+      hash: md5
+      md5: 806f8292358da3393ae0964813ad3f0b
+      size: 788
+  preprocessing:
+    cmd: python code/preprocessing/main.py
+    deps:
+    - path: data/WESAD
+      hash: md5
+      md5: c82e04eedaa116886b837001551e4984.dir
+      size: 17847329168
+      nfiles: 107
+    outs:
+    - path: data/processed_data
+      hash: md5
+      md5: 16f02c5dcd8a4028d453622d95a1fa19.dir
+      size: 50187166
+      nfiles: 15
+  split:
+    cmd: python code/split_train_test.py
+    deps:
+    - path: data/processed_data
+      hash: md5
+      md5: 16f02c5dcd8a4028d453622d95a1fa19.dir
+      size: 50187166
+      nfiles: 15
+    outs:
     - path: data/results
       hash: md5
-      md5: dd14e173cf070b49c6283cfbc96bf095.dir
-      size: 83654089
+      md5: 10af25fa0fb03ce4d2b634f2b1a0bda2.dir
+      size: 73332685
       nfiles: 8
-    - path: notebooks/StressModel.py
+    - path: images/evaluation
       hash: md5
-      md5: a88ce5ec0ddb44dd23e6898c9714cd38
-      size: 11530
-    params:
-      params.yaml:
-        model:
-          learning_rate: 0.001
-          epochs: 30
-          batch_size: 32
-          activation: relu
-          metrics:
-          - BVP
-          - TEMP
-          - ACC
-          kernel_size: 3
-          shuffle_buffer_size: 1024
-          kernel_regularizer: 0.001
-          input_shapes:
-            EDA: 32
-            BVP: 256
-            TEMP: 32
-            ACC: 256
-          input_features: 1
-          scaler: StandardScaler
-          dropout: 0.3
-  evaluation:
-    cmd: python notebooks/evaluate.py
-    deps:
-    - path: models/best_model.h5
-      hash: md5
-      md5: 5d173eb009c41ee04123888a4f98148f
-      size: 2662464
-    - path: notebooks/evaluate.py
-      hash: md5
-      md5: bfb24f0c42035da6918522b4b583e0b4
-      size: 7447
+      md5: c8554447049ec21fa4f985a7cb4ea009.dir
+      size: 52877
+      nfiles: 2

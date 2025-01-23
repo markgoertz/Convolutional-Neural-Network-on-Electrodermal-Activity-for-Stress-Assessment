@@ -1,8 +1,26 @@
-params:
-- params.yaml
-- dvclive/params.yaml
+stages:
+  preprocessing:
+    cmd: python code/preprocessing/main.py
+    deps:
+    - data/WESAD
+    outs:
+    - data/processed_data
+  split:
+    cmd: python code/split_train_test.py
+    deps:
+    - data/processed_data
+    outs:
+    - data/results
+    - images/evaluation
+
+  training:
+    cmd: python notebooks/StressModel.py
+    deps:
+    - code/preprocessing/main.py
+
+metrics:
+- dvclive/metrics.json
 plots:
-- images/evaluation/plots
 - dvclive/plots/metrics:
     x: step
 artifacts:
@@ -14,22 +32,5 @@ artifacts:
     labels:
     - no-stress
     - stress
-  StandardScaler-StressModel:
-    path: models/best_model.h5
-    type: model
-stages:
-  training:
-    cmd: python notebooks/StressModel.py
-    deps:
-    - notebooks/StressModel.py
-    - data/results
-    params:
-    - model
-
-  evaluation:
-    cmd: python notebooks/evaluate.py
-    deps:
-    - notebooks/evaluate.py
-    - models/best_model.h5
-metrics:
-- dvclive/metrics.json
+params:
+- dvclive/params.yaml
