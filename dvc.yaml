@@ -1,17 +1,17 @@
 stages:
   preprocessing:
     cmd: python code/preprocessing/main.py
-    deps: 
-      - data/WESAD  
-    outs: 
-      - data/processed_data
+    deps:
+    - data/WESAD
+    outs:
+    - data/processed_data
   split:
     cmd: python code/split_train_test.py
     deps:
-      - data/processed_data
+    - data/processed_data
     outs:
-      - data/results
-      - images/evaluation
+    - data/results
+    - images/evaluation
 
   training:
     cmd: python notebooks/StressModel.py
@@ -32,3 +32,5 @@ artifacts:
     labels:
     - no-stress
     - stress
+params:
+- dvclive/params.yaml

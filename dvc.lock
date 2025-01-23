@@ -2,6 +2,11 @@ schema: '2.0'
 stages:
   training:
     cmd: python notebooks/StressModel.py
+    deps:
+    - path: code/preprocessing/main.py
+      hash: md5
+      md5: 806f8292358da3393ae0964813ad3f0b
+      size: 788
   preprocessing:
     cmd: python code/preprocessing/main.py
     deps:
@@ -32,6 +37,6 @@ stages:
       nfiles: 8
     - path: images/evaluation
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: c8554447049ec21fa4f985a7cb4ea009.dir
+      size: 52877
+      nfiles: 2
