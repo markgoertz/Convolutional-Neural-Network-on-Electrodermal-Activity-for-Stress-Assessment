@@ -1,63 +1,92 @@
-![Keras](https://a11ybadges.com/badge?logo=keras)
-![Python](https://a11ybadges.com/badge?logo=python)
-![GitHub](https://a11ybadges.com/badge?logo=github)
-
-[![CI](https://github.com/markgoertz/Convolutional-Neural-Network-on-Electrodermal-Activity-for-Stress-Assessment/actions/workflows/CI.yml/badge.svg)](https://github.com/markgoertz/Convolutional-Neural-Network-on-Electrodermal-Activity-for-Stress-Assessment/actions/workflows/CI.yml)
-
-
-# 1D CNN for Electrodermal Activity Signal Classification
-This project implements a 1D Convolutional Neural Network (CNN) for classifying signals in raw Electrodermal Activity (EDA) data. EDA is a physiological measure of sweat gland activity, which can be indicative of emotional arousal or cognitive workload.
-
-## Project Structure
-```
-.
-├── README.md (this file)
-├── data/
-│   └── merged_data.csv  (EDA dataset)
-├── code/
-│   └── eda_signal_classification.ipynb  (Jupyter notebook for model development)
-├── .github/
-|        └── workflows
-│           └── CI.yml  (CI-pipeline)
-└── requirements.txt  (dependencies for project)
-```
-
-## Getting started
-1. **Clone the repository:**
-```
-git clone https://github.com/markgoertz/Convolutional-Neural-Network-on-Electrodermal-Activity-for-Stress-Assessment .git
-```
-2. **Install dependencies**
-```
-pip install -r requirements.txt
-```
-3. **Prepare the data**
-* Place the pre-processed EDA data using ```unzip-script.ipynb```, called ```merged_data.csv``` in the data folder. Ensure it's a CSV file with features and labels.
-
-4. **Train the model:**
-* Open ```eda_signal_classification.ipynb``` in a Jupyter notebook environment.
-* This notebook guides you through data loading, model building, training, and evaluation.
-
-5. **Best Models**
-* During the training process, the best model (based on the epochs and folds) get chosen. And saved as ```Best_model.keras```.
-* Modify the notebook in a new branch to load the model and make prediction on new data.
-
-## Dependencies
-This project uses various libraries like Tensorflow for building the CNN. The specific dependencies are listed in `requirements.txt`
+<a id="readme-top"></a>
+<br />
 <div align="center">
-	<code><img width="100" src="https://user-images.githubusercontent.com/25181517/183914128-3fc88b4a-4ac1-40e6-9443-9a30182379b7.png" alt="Jupyter Notebook" title="Jupyter Notebook"/></code>
-	<code><img width="100" src="https://user-images.githubusercontent.com/25181517/183423507-c056a6f9-1ba8-4312-a350-19bcbc5a8697.png" alt="Python" title="Python"/></code>
-	<code><img width="100" src="https://user-images.githubusercontent.com/25181517/223639822-2a01e63a-a7f9-4a39-8930-61431541bc06.png" alt="TensorFlow" title="TensorFlow"/></code>
+
+  <h3 align="center">Convolutional Neural Network on Physiological Signals for Stress Detection</h3>
+
+  <p align="center">
+    A CNN model for the Stress Wearables use case.
+    <br />
 </div>
 
-## Screen shots and results
 
-### Data preparation
-<img src="https://github.com/markgoertz/Convolutional-Neural-Network-on-Electrodermal-Activity-for-Stress-Assessment/blob/main/code/dataset_distribution.png"/>
 
-### Folds training
-<img src="https://github.com/markgoertz/Convolutional-Neural-Network-on-Electrodermal-Activity-for-Stress-Assessment/blob/main/code/folds.png"/>
+![Model Configuration](./images/handover/Model-Configuration.png)
 
-### Confusion Matrix
-<img src="https://github.com/markgoertz/Convolutional-Neural-Network-on-Electrodermal-Activity-for-Stress-Assessment/blob/main/code/model_results.png"/>
+## About this project
+This repository contains the code, data, and configurations for a research study investigating the use of Convolutional Neural Networks (CNNs) to analyze physiological signals for stress assessment. The study focuses on four key modalities: Electrodermal Activity (EDA), Blood Volume Pulse (BVP), Accelerometer (ACC) data, and Skin Temperature (Skin Temp).
+
+The project contains a developed one-dimensional Convolutional Neural Network (1D CNN) tailored for analyzing these time-series signals. The model outputs a sigmoid probability, enabling accurate binary classification of stress and non-stress states. To ensure reproducibility, the study utilized Data Version Control (DVC) to systematically track code, dataset versions, model hyperparameters, and experimental configurations. 
+## Research Objectives
+The primary goals of this research are:
+- **Understanding** physiological signals: Explore the relationship between stress levels and measurable changes in EDA, BVP, ACC, and Skin Temp data.
+- **Developing a detection model**: Use CNNs to process and analyze the time-series data for stress detection.
+- **Reproducibility and collaboration**: Ensure all data processing, modeling, and experimentation are reproducible through the use of Data Version Control (DVC).
+
+## Used Technologies
+<div align="center">
+    <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+    <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" alt="TensorFlow" />
+    <img src="https://img.shields.io/badge/DVC-945DD6?style=for-the-badge&logo=dvc&logoColor=white" alt="DVC" />
+    <img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white" alt="Pandas" />
+    <img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white" alt="NumPy" />
+    <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" alt="Git" />
+    <img src="https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white" alt="Jupyter" />
+    <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+</div>
+
+## Getting Started
+
+1. **Clone the repository:**
+    ```bash
+    git clone git@projects.fhict.nl:ai-en-big-data-lectoraat/streaming-wearables-and-stress-measurement-platform/convolutional-neural-network-on-multimodal-data-for-stress-assessment.git
+    ```
+
+2. **Install dependencies:**
+    ```bash
+    pip install -r requirements2.txt
+    ```
+
+3. **Setup DVC and data:**
+Please refer to the [Handover MD](https://projects.fhict.nl/ai-en-big-data-lectoraat/streaming-wearables-and-stress-measurement-platform/convolutional-neural-network-on-multimodal-data-for-stress-assessment/-/blob/main/handover.md?ref_type=heads).
+
+4. **Train the model:**
+    - Open `notebooks/stressModel.py` and run the python code to train the model.
+
+### Workflow with DVC
+
+- **Data Handling**: DVC tracks changes to large datasets, storing them in external storage while referencing them in Git.
+- **Experiment Reproducibility**: By using DVC pipelines, you can recreate past experiments by pulling the exact data and models that were used.
+- **Collaboration**: Multiple developers can collaborate on the same project by using DVC to share data and models easily, while Git handles code versioning.
+
+## Key Features
+
+- **Data Versioning**: Use DVC to manage and version datasets.
+- **Model Versioning**: Track different versions of models throughout the training process.
+- **Experiment Tracking**: DVC ensures that all your experiments are reproducible, from data through model training and evaluation.
+
+## Recommendations 
+- [ ] Conduct further hyperparameter tuning to improve model accuracy.
+- [ ] Apply SoftMax as output layer with 2 neurons: (no-stress & stress) for probabillity in both classes. So, GRADCAM can be applied on both classes.
+- [ ] Explore additional physiological signals for enhanced stress detection.
+- [ ] Implement real-time stress monitoring using the trained model.
+- [ ] Validate the model on a larger and more diverse dataset.
+- [ ] Expand DVC with more pipeline options.
+
+## Information About Used Hardware and Software Specs:
+### Hardware: 
+- **CPU**: AMD Ryzen 2700x
+- **GPU**: NVIDIA GeForce RTX 2060 Super with CUDA activated.
+- **Storage**: 50-100 GB of SSD
+- **RAM**: 32GB DDR4
+
+### Software:
+- Windows 11 Home
+- Python 3.9.18
+- Numpy: 1.26.4
+- Pandas: 2.2.2
+- DVC: 3.55.2
+- DVC-azure: 3.1.0 
+
+
 
