@@ -48,7 +48,7 @@ The primary goals of this research are:
     ```
 
 3. **Setup DVC and data:**
-Please refer to the [Handover MD](https://projects.fhict.nl/ai-en-big-data-lectoraat/streaming-wearables-and-stress-measurement-platform/convolutional-neural-network-on-multimodal-data-for-stress-assessment/-/blob/main/handover.md?ref_type=heads).
+Please refer to the [Handover MD](https://projects.fhict.nl/ai-en-big-data-lectoraat/streaming-wearables-and-stress-measurement-platform/convolutional-neural-network-on-multimodal-data-for-stress-assessment/-/blob/main/DVC.md?ref_type=heads).
 
 4. **Train the model:**
     - Open `notebooks/stressModel.py` and run the python code to train the model.
